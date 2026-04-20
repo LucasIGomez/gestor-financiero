@@ -37,7 +37,7 @@ Para ejecutar este proyecto en un entorno local, sigue estos pasos:
 
 4. **Ejecución:** Abre tu navegador web e ingresa a https://localhost/gestor-financiero/. El enrutador principal (index.php) gestionara automaticamente las vistas.
 
-🔮 Escalabilidad Futura (Roadmap)
+## 🔮 Escalabilidad Futura (Roadmap)
 El sistema está preparado a nivel base de datos y controladores para recibir futuras actualizaciones, incluyendo:
 
 * Integración de APIs bancarias para sincronización automática de transacciones.
