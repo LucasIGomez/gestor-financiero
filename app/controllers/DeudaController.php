@@ -8,22 +8,49 @@ class DeudaController {
         $this->modelo = new DeudaModel();
     }
 
-    // Obtiene las deudas ya ordenadas por el Modelo (Método Avalancha)
+    // [Existente] Obtiene las deudas ya ordenadas por el Modelo
     public function obtenerResumenAvalancha($id_usuario) {
         return $this->modelo->obtenerDeudasAvalancha($id_usuario);
     }
 
-    // Simula el impacto de un pago extra en una deuda específica
+    // [NUEVO] Procesa y valida el registro de una nueva deuda
+    public function procesarNuevaDeuda($id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual) {
+        $validacion = $this->validarDatosDeuda($saldo_total, $tasa_intereses, $cuota_mensual);
+        if ($validacion !== true) {
+            return $validacion; // Retorna el mensaje de error
+        }
+
+        $exito = $this->modelo->registrarDeuda($id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual);
+        return $exito ? true : "Error: No se pudo registrar la deuda en la base de datos.";
+    }
+
+    // [NUEVO] Procesa y valida la actualización de una deuda existente
+    public function procesarActualizacionDeuda($id_deuda, $id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual) {
+        $validacion = $this->validarDatosDeuda($saldo_total, $tasa_intereses, $cuota_mensual);
+        if ($validacion !== true) {
+            return $validacion;
+        }
+
+        $exito = $this->modelo->actualizarDeuda($id_deuda, $id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual);
+        return $exito ? true : "Error: No se pudo actualizar la deuda en la base de datos.";
+    }
+
+    // [NUEVO] Función privada para centralizar las reglas de negocio
+    private function validarDatosDeuda($saldo_total, $tasa_intereses, $cuota_mensual) {
+        if ($saldo_total <= 0) return "Error: El saldo total debe ser mayor a cero.";
+        if ($tasa_intereses < 0) return "Error: La tasa de interés no puede ser negativa.";
+        if ($cuota_mensual <= 0) return "Error: La cuota mensual debe ser mayor a cero.";
+        return true;
+    }
+
+    // [Existente] Simula el impacto de un pago extra en una deuda específica
     public function simularPagoExtra($saldo, $tasa_anual, $cuota_minima, $pago_extra) {
-        // Convertir TNA (Tasa Nominal Anual) a tasa mensual decimal
         $r = ($tasa_anual / 100) / 12;
-        
         $cuota_nueva = $cuota_minima + $pago_extra;
 
         $meses_normal = $this->calcularMesesAmortizacion($saldo, $r, $cuota_minima);
         $meses_extra = $this->calcularMesesAmortizacion($saldo, $r, $cuota_nueva);
 
-        // Si la deuda es impagable con la cuota mínima (interés > cuota)
         if ($meses_normal === INF) {
             return "La cuota mínima no cubre los intereses generados. Deuda impagable.";
         }
@@ -39,14 +66,11 @@ class DeudaController {
         ];
     }
 
-    // Algoritmo interno para calcular el tiempo de liquidación
+    // [Existente] Algoritmo interno para calcular el tiempo de liquidación
     private function calcularMesesAmortizacion($P, $r, $A) {
-        // Si el pago es menor o igual al interés mensual, la deuda crece o se estanca
         if ($A <= ($P * $r)) {
             return INF; 
         }
-        
-        // Fórmula matemática para el cálculo de cuotas
         $n = -log(1 - ($r * $P) / $A) / log(1 + $r);
         return $n;
     }
