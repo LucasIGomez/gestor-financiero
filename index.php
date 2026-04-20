@@ -6,9 +6,11 @@ error_reporting(E_ALL);
 // Carga de Controladores
 require_once 'app/controllers/TransaccionController.php';
 require_once 'app/controllers/DeudaController.php';
+require_once 'app/controllers/InversionController.php';
 
 $transaccionController = new TransaccionController();
 $deudaController = new DeudaController();
+$inversionController = new InversionController();
 
 // 1. Identificación del usuario (Hardcodeado a ID 1 para el MVP)
 $id_usuario_actual = 1; 
@@ -111,6 +113,18 @@ if ($action === 'dashboard') {
         echo "<a href='index.php?action=deudas'>Volver al Asesor de Deudas</a>";
     }
 
+} elseif ($action === 'inversiones') {
+    // Si el usuario envía el formulario, procesamos la lógica
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $inversion_inicial = $_POST['inversion_inicial'];
+        $adicion_mensual = $_POST['adicion_mensual'];
+        $tasa_anual = $_POST['tasa_anual'];
+        $anos = $_POST['anos'];
+        
+        $resultados = $inversionController->calcularProyeccion($inversion_inicial, $adicion_mensual, $tasa_anual, $anos);
+    }
+    // Renderizamos la vista del simulador
+    require_once 'app/views/simulador_inversion_view.php'; 
 } else {
     // Manejo de rutas inexistentes (Error 404)
     echo "<h2>Error 404: Módulo no encontrado.</h2>";

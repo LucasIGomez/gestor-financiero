@@ -55,6 +55,12 @@
 </head>
 
 <body>
+    <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+        <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard Financiero</a>
+        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Asesor de Deudas</a>
+        <a href="index.php?action=inversiones" style="color: white; text-decoration: none; font-weight: bold;">Simulador de Inversiones</a>
+    </nav>
+    
     <h2>Modificar Registro de Deuda</h2>
     <div class="form-container">
         <form action="index.php?action=actualizar_deuda" method="POST">

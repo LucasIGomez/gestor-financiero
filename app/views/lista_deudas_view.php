@@ -23,6 +23,7 @@
     <nav>
         <a href="index.php?action=dashboard">Dashboard Financiero</a>
         <a href="index.php?action=deudas">Asesor de Deudas</a>
+        <a href="index.php?action=inversiones" style="color: white; text-decoration: none; font-weight: bold;">Simulador de Inversiones</a>
     </nav>
 
     <h1>Plan de Eliminación de Deudas (Método Avalancha)</h1>
