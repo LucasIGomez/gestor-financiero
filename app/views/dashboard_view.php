@@ -22,21 +22,31 @@
         <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard Financiero</a>
         <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold;">Asesor de Deudas</a>
     </nav>
-    
+
     <h1>Dashboard Financiero</h1>
 
     <div class="resumen">
         <div class="tarjeta">
-            <h3>Ingresos Totales</h3>
+            <h3>Ingresos Históricos</h3>
             <p class="ingreso">$<?= number_format($datos['ingresos'], 2) ?></p>
         </div>
         <div class="tarjeta">
-            <h3>Gastos Totales</h3>
+            <h3>Gastos Históricos</h3>
             <p class="gasto">$<?= number_format($datos['gastos'], 2) ?></p>
         </div>
-        <div class="tarjeta">
-            <h3>Balance Final</h3>
-            <p><strong>$<?= number_format($datos['balance'], 2) ?></strong></p>
+        <div class="tarjeta" style="background-color: #e9ecef;">
+            <h3>Liquidez Disponible</h3>
+            <p><strong>$<?= number_format($datos['liquidez'], 2) ?></strong></p>
+        </div>
+        <div class="tarjeta" style="border-color: #dc3545;">
+            <h3 style="color: #dc3545;">Pasivos (Deuda Total)</h3>
+            <p class="gasto">-$<?= number_format($datos['total_deudas'], 2) ?></p>
+        </div>
+        <div class="tarjeta" style="background-color: <?= $datos['patrimonio_neto'] >= 0 ? '#d4edda' : '#f8d7da' ?>; border-color: <?= $datos['patrimonio_neto'] >= 0 ? '#c3e6cb' : '#f5c6cb' ?>;">
+            <h3>Patrimonio Neto Real</h3>
+            <p style="color: <?= $datos['patrimonio_neto'] >= 0 ? 'green' : 'red' ?>;">
+                <strong>$<?= number_format($datos['patrimonio_neto'], 2) ?></strong>
+            </p>
         </div>
     </div>
 
