@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Gestor Financiero</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .resumen { display: flex; gap: 20px; margin-bottom: 30px; }
+        .tarjeta { border: 1px solid #ccc; padding: 20px; border-radius: 5px; min-width: 200px; }
+        .ingreso { color: green; font-weight: bold; }
+        .gasto { color: red; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .form-container { margin-bottom: 30px; padding: 20px; border: 1px solid #007bff; border-radius: 5px; }
+        .form-group { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Financiero</h1>
+
+    <div class="resumen">
+        <div class="tarjeta">
+            <h3>Ingresos Totales</h3>
+            <p class="ingreso">$<?= number_format($datos['ingresos'], 2) ?></p>
+        </div>
+        <div class="tarjeta">
+            <h3>Gastos Totales</h3>
+            <p class="gasto">$<?= number_format($datos['gastos'], 2) ?></p>
+        </div>
+        <div class="tarjeta">
+            <h3>Balance Final</h3>
+            <p><strong>$<?= number_format($datos['balance'], 2) ?></strong></p>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <h2>Registrar Nueva Transacción</h2>
+        <form action="index.php?action=registrar" method="POST">
+            <div class="form-group">
+                <label>Categoría:</label>
+                <select name="id_categoria" required>
+                    <option value="">Seleccione una categoría...</option>
+                    <?php foreach ($datos['categorias'] as $cat): ?>
+                        <option value="<?= $cat['id_categoria'] ?>">
+                            <?= htmlspecialchars($cat['nombre_categoria']) ?> (<?= strtoupper($cat['tipo_flujo']) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Monto ($):</label>
+                <input type="number" step="0.01" name="monto" required min="0.01">
+            </div>
+
+            <div class="form-group">
+                <label>Descripción (Opcional):</label>
+                <input type="text" name="descripcion" maxlength="255">
+            </div>
+
+            <div class="form-group">
+                <label>Fecha:</label>
+                <input type="date" name="fecha_transaccion" required value="<?= date('Y-m-d') ?>">
+            </div>
+
+            <button type="submit">Guardar Transacción</button>
+        </form>
+    </div>
+
+    <h2>Historial de Movimientos</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Tipo</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($datos['transacciones'] as $t): ?>
+                <tr>
+                    <td><?= date('d/m/Y', strtotime($t['fecha_transaccion'])) ?></td>
+                    <td><?= htmlspecialchars($t['nombre_categoria']) ?></td>
+                    <td><?= htmlspecialchars($t['descripcion']) ?></td>
+                    <td><?= strtoupper($t['tipo_flujo']) ?></td>
+                    <td class="<?= $t['tipo_flujo'] === 'ingreso' ? 'ingreso' : 'gasto' ?>">
+                        $<?= number_format($t['monto'], 2) ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</body>
+</html>
