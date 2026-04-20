@@ -4,15 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asesor de Deudas - Gestor Financiero</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        nav { background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; margin-right: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .form-container { margin-bottom: 30px; padding: 20px; border: 1px solid #dc3545; border-radius: 5px; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { padding: 10px 15px; background-color: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background-color: #c82333; }
+    </style>
 </head>
 <body>
-    <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-        <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard Financiero</a>
-        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold;">Asesor de Deudas</a>
+    <nav>
+        <a href="index.php?action=dashboard">Dashboard Financiero</a>
+        <a href="index.php?action=deudas">Asesor de Deudas</a>
     </nav>
-    
-    <h2>Plan de Eliminación de Deudas (Método Avalancha)</h2>
-    <table border="1" cellpadding="10">
+
+    <h1>Plan de Eliminación de Deudas (Método Avalancha)</h1>
+
+    <div class="form-container">
+        <h2>Registrar Nueva Deuda</h2>
+        <form action="index.php?action=registrar_deuda" method="POST">
+            <div class="form-group">
+                <label>Nombre de la Deuda:</label>
+                <input type="text" name="nombre_deuda" required maxlength="100" placeholder="Ej. Tarjeta de Crédito, Préstamo Auto">
+            </div>
+            
+            <div class="form-group">
+                <label>Saldo Total Adeudado ($):</label>
+                <input type="number" step="0.01" name="saldo_total" required min="0.01">
+            </div>
+
+            <div class="form-group">
+                <label>Tasa de Interés Nominal Anual (TNA %):</label>
+                <input type="number" step="0.01" name="tasa_intereses" required min="0">
+            </div>
+
+            <div class="form-group">
+                <label>Cuota Mensual Mínima ($):</label>
+                <input type="number" step="0.01" name="cuota_mensual" required min="0.01">
+            </div>
+
+            <button type="submit">Guardar Deuda</button>
+        </form>
+    </div>
+
+    <h2>Prioridades de Pago</h2>
+    <table>
         <thead>
             <tr>
                 <th>Deuda</th>
@@ -23,32 +66,37 @@
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($deudas as $deuda): ?>
+            <?php if (!empty($deudas)): ?>
+                <?php foreach ($deudas as $deuda): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($deuda['nombre_deuda']) ?></td>
+                        <td>$<?= number_format($deuda['saldo_total'], 2) ?></td>
+                        <td><?= number_format($deuda['tasa_intereses'], 2) ?>%</td>
+                        <td>$<?= number_format($deuda['cuota_mensual'], 2) ?></td>
+                        <td>
+                            <?php 
+                                $simulacion = $controlador->simularPagoExtra(
+                                    $deuda['saldo_total'], 
+                                    $deuda['tasa_intereses'], 
+                                    $deuda['cuota_mensual'], 
+                                    50000 
+                                );
+                                
+                                if (is_string($simulacion)) {
+                                    echo "<span style='color:red'>" . $simulacion . "</span>"; 
+                                } else {
+                                    echo "Ahorro de tiempo: " . $simulacion['ahorro_meses'] . " meses<br>";
+                                    echo "Ahorro en intereses: <strong style='color:green'>$" . number_format($simulacion['ahorro_intereses'], 2) . "</strong>";
+                                }
+                            ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php else: ?>
                 <tr>
-                    <td><?= htmlspecialchars($deuda['nombre_deuda']) ?></td>
-                    <td>$<?= number_format($deuda['saldo_total'], 2) ?></td>
-                    <td><?= number_format($deuda['tasa_intereses'], 2) ?>%</td>
-                    <td>$<?= number_format($deuda['cuota_mensual'], 2) ?></td>
-                    <td>
-                        <?php 
-                            // Ejecutamos el simulador del controlador para cada deuda
-                            $simulacion = $controlador->simularPagoExtra(
-                                $deuda['saldo_total'], 
-                                $deuda['tasa_intereses'], 
-                                $deuda['cuota_mensual'], 
-                                50000 // Valor hardcodeado para la prueba
-                            );
-                            
-                            if (is_string($simulacion)) {
-                                echo $simulacion; // Imprime advertencia de deuda impagable
-                            } else {
-                                echo "Ahorro de tiempo: " . $simulacion['ahorro_meses'] . " meses<br>";
-                                echo "Ahorro en intereses: $" . number_format($simulacion['ahorro_intereses'], 2);
-                            }
-                        ?>
-                    </td>
+                    <td colspan="5" style="text-align:center;">No tienes deudas registradas. ¡Felicitaciones!</td>
                 </tr>
-            <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
 </body>
