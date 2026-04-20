@@ -74,5 +74,10 @@ class DeudaController {
         $n = -log(1 - ($r * $P) / $A) / log(1 + $r);
         return $n;
     }
+    
+    // Extrae una deuda validando que pertenezca al usuario
+    public function obtenerDeudaEspecifica($id_deuda, $id_usuario) {
+        return $this->modelo->obtenerDeudaPorId($id_deuda, $id_usuario);
+    }
 }
 ?>

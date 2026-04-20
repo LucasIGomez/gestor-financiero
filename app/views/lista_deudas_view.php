@@ -63,12 +63,16 @@
                 <th>Tasa de Interés (TNA)</th>
                 <th>Cuota Actual</th>
                 <th>Simulación (Pago Extra: $50,000)</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             <?php if (!empty($deudas)): ?>
                 <?php foreach ($deudas as $deuda): ?>
                     <tr>
+                        <td>
+                            <a href="index.php?action=editar_deuda&id=<?= $deuda['id_deuda'] ?>" style="background-color: #ffc107; padding: 5px 10px; text-decoration: none; color: black; border-radius: 3px;">Editar</a>
+                        </td>
                         <td><?= htmlspecialchars($deuda['nombre_deuda']) ?></td>
                         <td>$<?= number_format($deuda['saldo_total'], 2) ?></td>
                         <td><?= number_format($deuda['tasa_intereses'], 2) ?>%</td>

@@ -23,6 +23,17 @@ class DeudaModel {
         return $stmt->fetchAll();
     }
 
+    // Obtiene una deuda específica para rellenar el formulario de edición
+    public function obtenerDeudaPorId($id_deuda, $id_usuario) {
+        $sql = "SELECT * FROM deudas WHERE id_deuda = :id_deuda AND id_usuario = :id_usuario";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetch(); // fetch() retorna una sola fila, no un array de filas
+    }
+
     // [NUEVO] Inserta una nueva deuda en la base de datos
     public function registrarDeuda($id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual) {
         $sql = "INSERT INTO deudas (id_usuario, nombre_deuda, saldo_total, tasa_intereses, cuota_mensual) 
