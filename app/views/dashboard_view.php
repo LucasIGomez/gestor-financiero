@@ -20,8 +20,9 @@
 <body>
     <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
         <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard Financiero</a>
-        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold;">Asesor de Deudas</a>
-        <a href="index.php?action=inversiones" style="color: white; text-decoration: none; font-weight: bold;">Simulador de Inversiones</a>
+        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Asesor de Deudas</a>
+        <a href="index.php?action=inversiones" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Simulador de Inversiones</a>
+        <a href="index.php?action=impuestos" style="color: white; text-decoration: none; font-weight: bold;">Calculadora Fiscal</a>
     </nav>
 
     <h1>Dashboard Financiero</h1>

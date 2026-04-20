@@ -7,7 +7,9 @@ error_reporting(E_ALL);
 require_once 'app/controllers/TransaccionController.php';
 require_once 'app/controllers/DeudaController.php';
 require_once 'app/controllers/InversionController.php';
+require_once 'app/controllers/ImpuestoController.php';
 
+$impuestoController = new ImpuestoController();
 $transaccionController = new TransaccionController();
 $deudaController = new DeudaController();
 $inversionController = new InversionController();
@@ -125,6 +127,19 @@ if ($action === 'dashboard') {
     }
     // Renderizamos la vista del simulador
     require_once 'app/views/simulador_inversion_view.php'; 
+} elseif ($action === 'impuestos') {
+    // Procesamiento de la calculadora fiscal
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $brutos = $_POST['ingresos_brutos'];
+        $deducibles = $_POST['gastos_deducibles'];
+        $iva = $_POST['porcentaje_iva'];
+        $iibb = $_POST['porcentaje_iibb'];
+        $ganancias = $_POST['porcentaje_ganancias'];
+        
+        $resultados = $impuestoController->calcularReservaFiscal($brutos, $deducibles, $iva, $ganancias, $iibb);
+    }
+    require_once 'app/views/calculadora_impuestos_view.php';
+
 } else {
     // Manejo de rutas inexistentes (Error 404)
     echo "<h2>Error 404: Módulo no encontrado.</h2>";
