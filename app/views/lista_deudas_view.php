@@ -6,6 +6,11 @@
     <title>Asesor de Deudas - Gestor Financiero</title>
 </head>
 <body>
+    <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+        <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard Financiero</a>
+        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold;">Asesor de Deudas</a>
+    </nav>
+    
     <h2>Plan de Eliminación de Deudas (Método Avalancha)</h2>
     <table border="1" cellpadding="10">
         <thead>

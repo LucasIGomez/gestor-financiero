@@ -18,6 +18,11 @@
     </style>
 </head>
 <body>
+    <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+        <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard Financiero</a>
+        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold;">Asesor de Deudas</a>
+    </nav>
+    
     <h1>Dashboard Financiero</h1>
 
     <div class="resumen">
