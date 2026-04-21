@@ -9,9 +9,12 @@ class UsuarioModel {
         $this->db = $conexion->conectar();
     }
 
-    // Registra un nuevo usuario, encripta contraseña y asigna categorías por defecto
+    // Registra un nuevo usuario, encripta contraseña y asigna categorías mediante Transacciones
     public function registrarUsuario($nombre, $email, $password_hash) {
         try {
+            // INICIO DE LA TRANSACCIÓN: Pausa el guardado definitivo en la BD
+            $this->db->beginTransaction();
+
             // 1. Insertar el usuario
             $sql = "INSERT INTO usuarios (nombre, email, password_hash, fecha_registro) 
                     VALUES (:nombre, :email, :password_hash, NOW())";
@@ -21,27 +24,35 @@ class UsuarioModel {
             $stmt->bindParam(':password_hash', $password_hash, PDO::PARAM_STR);
             $stmt->execute();
 
-            // 2. Capturar el ID asignado por MySQL al nuevo usuario
+            // 2. Capturar el ID asignado por MySQL
             $id_usuario_nuevo = $this->db->lastInsertId();
 
-            // 3. Inyectar categorías base atadas a este nuevo usuario
+            // 3. Inyectar categorías base concatenando el ID entero (evita el error de parámetros múltiples en PDO)
             $sql_categorias = "INSERT INTO categorias (id_usuario, nombre_categoria, tipo_flujo) VALUES 
-                (:id, 'Sueldo', 'ingreso'),
-                (:id, 'Ventas', 'ingreso'),
-                (:id, 'Alimentación', 'gasto'),
-                (:id, 'Vivienda', 'gasto'),
-                (:id, 'Transporte', 'gasto'),
-                (:id, 'Servicios', 'gasto'),
-                (:id, 'Ocio', 'gasto'),
-                (:id, 'Pago de Deudas', 'gasto')";
+                ($id_usuario_nuevo, 'Sueldo', 'ingreso'),
+                ($id_usuario_nuevo, 'Ventas', 'ingreso'),
+                ($id_usuario_nuevo, 'Alimentación', 'gasto'),
+                ($id_usuario_nuevo, 'Vivienda', 'gasto'),
+                ($id_usuario_nuevo, 'Transporte', 'gasto'),
+                ($id_usuario_nuevo, 'Servicios', 'gasto'),
+                ($id_usuario_nuevo, 'Ocio', 'gasto'),
+                ($id_usuario_nuevo, 'Pago de Deudas', 'gasto')";
             
             $stmt_cat = $this->db->prepare($sql_categorias);
-            $stmt_cat->bindParam(':id', $id_usuario_nuevo, PDO::PARAM_INT);
             $stmt_cat->execute();
 
+            // CONFIRMAR TRANSACCIÓN: Si todo salió bien, guarda los cambios definitivamente
+            $this->db->commit();
+
             return true;
+
         } catch (PDOException $e) {
-            // Retorna falso si el correo ya existe
+            // Revertir transacción en caso de fallo para evitar datos huérfanos
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            
+            // Retorna falso para que el Controlador muestre el mensaje de error en la interfaz
             return false; 
         }
     }
