@@ -130,6 +130,26 @@ elseif ($action === 'actualizar_deuda' && $_SERVER['REQUEST_METHOD'] === 'POST')
     }
 }
 
+// Módulo: Gastos Recurrentes (Crear)
+elseif ($action === 'registrar_recurrente' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $resultado = $transaccionController->procesarNuevoGastoRecurrente(
+        $id_usuario_actual,
+        $_POST['id_categoria'],
+        $_POST['monto'],
+        $_POST['descripcion'],
+        $_POST['dia_cobro']
+    );
+
+    if ($resultado === true) {
+        header('Location: index.php?action=gastos_recurrentes');
+        exit;
+    } else {
+        echo "<h3 style='color:red;'>$resultado</h3>";
+        echo "<a href='index.php?action=gastos_recurrentes'>Volver</a>";
+        exit;
+    }
+}
+
 // ==========================================
 // 5. CARGA DE VISTAS (GET - RENDERIZADO Y OTROS CÁLCULOS)
 // ==========================================
@@ -184,6 +204,12 @@ elseif ($action === 'impuestos') {
     }
     require_once 'app/views/calculadora_impuestos_view.php';
 } 
+
+// Módulo: Gastos Recurrentes (Vista)
+elseif ($action === 'gastos_recurrentes') {
+    $datos = $transaccionController->obtenerDatosGastosRecurrentes($id_usuario_actual);
+    require_once 'app/views/gastos_recurrentes_view.php';
+}
 
 else {
     echo "<h2>Error 404: Módulo no encontrado.</h2>";

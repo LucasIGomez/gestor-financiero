@@ -29,5 +29,31 @@ class GastoRecurrenteModel {
         $stmt->bindParam(':id_recurrente', $id_recurrente, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    // Registra una nueva plantilla de gasto fijo mensual
+    public function registrarGastoRecurrente($id_usuario, $id_categoria, $monto, $descripcion, $dia_cobro) {
+        $sql = "INSERT INTO gastos_recurrentes (id_usuario, id_categoria, monto, descripcion, dia_cobro) 
+                VALUES (:id_usuario, :id_categoria, :monto, :descripcion, :dia_cobro)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->bindParam(':id_categoria', $id_categoria, PDO::PARAM_INT);
+        $stmt->bindParam(':monto', $monto, PDO::PARAM_STR);
+        $stmt->bindParam(':descripcion', $descripcion, PDO::PARAM_STR);
+        $stmt->bindParam(':dia_cobro', $dia_cobro, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
+    // Obtiene todas las plantillas activas del usuario, uniendo con la tabla categorías
+    public function obtenerPlantillasUsuario($id_usuario) {
+        $sql = "SELECT gr.*, c.nombre_categoria 
+                FROM gastos_recurrentes gr 
+                INNER JOIN categorias c ON gr.id_categoria = c.id_categoria 
+                WHERE gr.id_usuario = :id_usuario 
+                ORDER BY gr.dia_cobro ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

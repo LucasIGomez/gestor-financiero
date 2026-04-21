@@ -85,5 +85,21 @@ class TransaccionController {
         $exito = $this->transaccionModel->registrarTransaccion($id_usuario, $id_categoria, $monto, $descripcion, $fecha_transaccion);
         return $exito ? true : "Error: No se pudo registrar la transacción.";
     }
+
+    // Procesa y valida el registro de una nueva plantilla de gasto
+    public function procesarNuevoGastoRecurrente($id_usuario, $id_categoria, $monto, $descripcion, $dia_cobro) {
+        if ($monto <= 0) return "Error: El monto debe ser mayor a cero.";
+        if ($dia_cobro < 1 || $dia_cobro > 31) return "Error: El día de cobro debe estar entre 1 y 31.";
+        
+        $exito = $this->gastoRecurrenteModel->registrarGastoRecurrente($id_usuario, $id_categoria, $monto, $descripcion, $dia_cobro);
+        return $exito ? true : "Error: No se pudo guardar la plantilla del gasto.";
+    }
+
+    // Extrae las categorías y las plantillas para enviarlas a la Vista
+    public function obtenerDatosGastosRecurrentes($id_usuario) {
+        $categorias = $this->categoriaModel->obtenerCategorias($id_usuario);
+        $plantillas = $this->gastoRecurrenteModel->obtenerPlantillasUsuario($id_usuario);
+        return ['categorias' => $categorias, 'plantillas' => $plantillas];
+    }
 }
 ?>
