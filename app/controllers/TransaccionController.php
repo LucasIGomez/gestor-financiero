@@ -2,22 +2,25 @@
 require_once 'app/models/TransaccionModel.php';
 require_once 'app/models/CategoriaModel.php';
 require_once 'app/models/DeudaModel.php';
-require_once 'app/models/GastoRecurrenteModel.php'; // 1. Importación del nuevo modelo
+require_once 'app/models/GastoRecurrenteModel.php';
+require_once 'app/models/MetaModel.php'; // Integración del modelo de metas
 
 class TransaccionController {
     private $transaccionModel;
     private $categoriaModel;
     private $deudaModel;
     private $gastoRecurrenteModel;
+    private $metaModel;
 
     public function __construct() {
         $this->transaccionModel = new TransaccionModel();
         $this->categoriaModel = new CategoriaModel();
         $this->deudaModel = new DeudaModel();
-        $this->gastoRecurrenteModel = new GastoRecurrenteModel(); // 2. Instanciación
+        $this->gastoRecurrenteModel = new GastoRecurrenteModel();
+        $this->metaModel = new MetaModel(); // Instanciación del modelo de metas
     }
 
-    // 3. Lógica del Pseudo-Cron de automatización
+    // Lógica del Pseudo-Cron de automatización de gastos fijos
     private function automatizarGastosRecurrentes($id_usuario) {
         $gastos_pendientes = $this->gastoRecurrenteModel->obtenerGastosPendientes($id_usuario);
         
@@ -43,7 +46,7 @@ class TransaccionController {
         // Ejecución del motor de automatización antes de renderizar la vista
         $this->automatizarGastosRecurrentes($id_usuario);
 
-        // Bloque original de cálculo de balances
+        // Extracción de datos de los distintos modelos
         $transacciones = $this->transaccionModel->obtenerTransacciones($id_usuario);
         $categorias = $this->categoriaModel->obtenerCategorias($id_usuario);
         $deudas = $this->deudaModel->obtenerDeudasAvalancha($id_usuario);
@@ -51,17 +54,16 @@ class TransaccionController {
         $total_ingresos = 0;
         $total_gastos = 0;
         $total_deudas = 0;
-
-        // NUEVO: Array para agrupar gastos específicos por categoría
         $gastos_por_categoria = [];
 
+        // Sumatoria y agrupación de transacciones
         foreach ($transacciones as $transaccion) {
             if ($transaccion['tipo_flujo'] === 'ingreso') {
                 $total_ingresos += $transaccion['monto'];
             } elseif ($transaccion['tipo_flujo'] === 'gasto') {
                 $total_gastos += $transaccion['monto'];
                 
-                // NUEVO: Lógica de agrupación matemática
+                // Lógica de agrupación matemática para gráficos y alertas
                 $nombre_cat = $transaccion['nombre_categoria'];
                 if (!isset($gastos_por_categoria[$nombre_cat])) {
                     $gastos_por_categoria[$nombre_cat] = 0;
@@ -70,14 +72,7 @@ class TransaccionController {
             }
         }
 
-        foreach ($deudas as $deuda) {
-            $total_deudas += $deuda['saldo_total'];
-        }
-
-        $liquidez_actual = $total_ingresos - $total_gastos;
-        $patrimonio_neto = $liquidez_actual - $total_deudas;
-
-        // NUEVO: Motor de Alertas de Presupuesto (Regla del 20%)
+        // Motor de Alertas de Presupuesto (Regla del 20%)
         $alertas = [];
         if ($total_ingresos > 0) {
             foreach ($gastos_por_categoria as $nombre_cat => $monto_gastado) {
@@ -90,7 +85,25 @@ class TransaccionController {
             }
         }
 
-        // Codificación a JSON para Chart.js
+        // Sumatoria de pasivos
+        foreach ($deudas as $deuda) {
+            $total_deudas += $deuda['saldo_total'];
+        }
+
+        // Calcular el total de dinero apartado en todas las metas (ahorros reales)
+        $metas = $this->metaModel->obtenerMetasUsuario($id_usuario);
+        $total_ahorros = 0;
+        foreach ($metas as $meta) {
+            $total_ahorros += $meta['saldo_actual'];
+        }
+
+        // FÓRMULAS CORREGIDAS PARA EL BALANCE PATRIMONIAL
+        $liquidez_actual = $total_ingresos - $total_gastos; // Los ahorros en metas ya están restados dentro de $total_gastos
+        
+        // El Patrimonio Neto suma la liquidez disponible, suma el efectivo guardado en las metas, y resta las deudas
+        $patrimonio_neto = $liquidez_actual + $total_ahorros - $total_deudas;
+
+        // Codificación a JSON para que la Vista y Chart.js puedan leerlos
         $grafico_etiquetas = json_encode(array_keys($gastos_por_categoria));
         $grafico_valores = json_encode(array_values($gastos_por_categoria));
 
@@ -104,7 +117,7 @@ class TransaccionController {
             'patrimonio_neto'   => $patrimonio_neto,
             'grafico_etiquetas' => $grafico_etiquetas,
             'grafico_valores'   => $grafico_valores,
-            'alertas'           => $alertas // NUEVO: Pasamos las alertas a la Vista
+            'alertas'           => $alertas
         ];
     }
 
@@ -116,7 +129,7 @@ class TransaccionController {
         return $exito ? true : "Error: No se pudo registrar la transacción.";
     }
 
-    // Procesa y valida el registro de una nueva plantilla de gasto
+    // Procesa y valida el registro de una nueva plantilla de gasto recurrente
     public function procesarNuevoGastoRecurrente($id_usuario, $id_categoria, $monto, $descripcion, $dia_cobro) {
         if ($monto <= 0) return "Error: El monto debe ser mayor a cero.";
         if ($dia_cobro < 1 || $dia_cobro > 31) return "Error: El día de cobro debe estar entre 1 y 31.";
@@ -125,7 +138,7 @@ class TransaccionController {
         return $exito ? true : "Error: No se pudo guardar la plantilla del gasto.";
     }
 
-    // Extrae las categorías y las plantillas para enviarlas a la Vista
+    // Extrae las categorías y las plantillas para enviarlas a la Vista de Gastos Fijos
     public function obtenerDatosGastosRecurrentes($id_usuario) {
         $categorias = $this->categoriaModel->obtenerCategorias($id_usuario);
         $plantillas = $this->gastoRecurrenteModel->obtenerPlantillasUsuario($id_usuario);
