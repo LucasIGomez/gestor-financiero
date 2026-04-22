@@ -20,10 +20,11 @@ class MetaModel {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 2. Crear: Registra un nuevo objetivo financiero
+    // 2. Crear: Registra un nuevo objetivo financiero (con saldo inicial forzado a 0.00)
     public function registrarMeta($id_usuario, $nombre_meta, $monto_objetivo, $fecha_limite) {
-        $sql = "INSERT INTO metas_financieras (id_usuario, nombre_meta, monto_objetivo, fecha_limite) 
-                VALUES (:id_usuario, :nombre_meta, :monto_objetivo, :fecha_limite)";
+        // Se inyecta la columna saldo_actual y el valor 0.00 directamente en el INSERT
+        $sql = "INSERT INTO metas_financieras (id_usuario, nombre_meta, monto_objetivo, saldo_actual, fecha_limite) 
+                VALUES (:id_usuario, :nombre_meta, :monto_objetivo, 0.00, :fecha_limite)";
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
         $stmt->bindParam(':nombre_meta', $nombre_meta, PDO::PARAM_STR);

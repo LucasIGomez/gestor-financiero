@@ -14,7 +14,9 @@ require_once 'app/controllers/DeudaController.php';
 require_once 'app/controllers/InversionController.php';
 require_once 'app/controllers/ImpuestoController.php';
 require_once 'app/controllers/UsuarioController.php';
+require_once 'app/controllers/MetaController.php';
 
+$metaController = new MetaController();
 $transaccionController = new TransaccionController();
 $deudaController = new DeudaController();
 $inversionController = new InversionController();
@@ -150,6 +152,36 @@ elseif ($action === 'registrar_recurrente' && $_SERVER['REQUEST_METHOD'] === 'PO
     }
 }
 
+// Módulo: Metas (Crear Nueva)
+elseif ($action === 'registrar_meta' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $resultado = $metaController->procesarNuevaMeta(
+        $id_usuario_actual, $_POST['nombre_meta'], $_POST['monto_objetivo'], $_POST['fecha_limite']
+    );
+
+    if ($resultado === true) {
+        header('Location: index.php?action=metas');
+        exit;
+    } else {
+        echo "<h3 style='color:red;'>$resultado</h3><a href='index.php?action=metas'>Volver</a>";
+        exit;
+    }
+}
+
+// Módulo: Metas (Agregar Ahorro)
+elseif ($action === 'agregar_ahorro' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $resultado = $metaController->procesarAhorro(
+        $_POST['id_meta'], $id_usuario_actual, $_POST['monto_deposito']
+    );
+
+    if ($resultado === true) {
+        header('Location: index.php?action=metas');
+        exit;
+    } else {
+        echo "<h3 style='color:red;'>$resultado</h3><a href='index.php?action=metas'>Volver</a>";
+        exit;
+    }
+}
+
 // ==========================================
 // 5. CARGA DE VISTAS (GET - RENDERIZADO Y OTROS CÁLCULOS)
 // ==========================================
@@ -209,6 +241,12 @@ elseif ($action === 'impuestos') {
 elseif ($action === 'gastos_recurrentes') {
     $datos = $transaccionController->obtenerDatosGastosRecurrentes($id_usuario_actual);
     require_once 'app/views/gastos_recurrentes_view.php';
+}
+
+// Módulo: Metas Financieras (Vista)
+elseif ($action === 'metas') {
+    $metas = $metaController->obtenerDatosMetas($id_usuario_actual);
+    require_once 'app/views/metas_view.php';
 }
 
 else {
