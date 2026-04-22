@@ -16,6 +16,7 @@
         .form-container { margin-bottom: 30px; padding: 20px; border: 1px solid #007bff; border-radius: 5px; }
         .form-group { margin-bottom: 10px; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
@@ -52,6 +53,11 @@
                 <strong>$<?= number_format($datos['patrimonio_neto'], 2) ?></strong>
             </p>
         </div>
+    </div>
+
+    <div style="width: 100%; max-width: 600px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+        <h3 style="text-align: center; color: #333;">Distribución de Gastos</h3>
+        <canvas id="graficoGastos"></canvas>
     </div>
 
     <div class="form-container">
@@ -113,5 +119,42 @@
             <?php endforeach; ?>
         </tbody>
     </table>
+    
+    <script>
+        const ctx = document.getElementById('graficoGastos').getContext('2d');
+
+        // El motor PHP inyecta el JSON formateado directamente en las variables de JavaScript
+        const etiquetas = <?= $datos['grafico_etiquetas'] ?>;
+        const valores = <?= $datos['grafico_valores'] ?>;
+
+        new Chart(ctx, {
+            type: 'doughnut', // Define un gráfico de anillo moderno
+            data: {
+                labels: etiquetas,
+                datasets: [{
+                    data: valores,
+                    backgroundColor: [
+                        '#FF6384', // Rojo/Rosa
+                        '#36A2EB', // Azul
+                        '#FFCE56', // Amarillo
+                        '#4BC0C0', // Turquesa
+                        '#9966FF', // Violeta
+                        '#FF9F40', // Naranja
+                        '#C9CBCF'  // Gris
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right', // Coloca las etiquetas a la derecha del gráfico
+                    }
+                }
+            }
+        });
+    </script>
+
 </body>
 </html>
