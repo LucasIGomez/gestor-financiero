@@ -9,14 +9,19 @@
         /* Barra de Navegación */
         nav { background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
         nav a { color: white; text-decoration: none; font-weight: bold; margin-right: 20px; }
+        
         /* Tarjetas de Resumen */
         .resumen-container { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
         .tarjeta { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center; }
         .tarjeta h3 { margin-top: 0; font-size: 1.1em; color: #555; }
         .tarjeta p { font-size: 1.5em; font-weight: bold; margin: 0; }
+        
+        /* Clases de colores y destaques */
         .ingreso { color: #28a745; }
         .gasto { color: #dc3545; }
         .neutro { color: #007bff; }
+        .tarjeta-destacada { border: 2px solid #ffc107; background-color: #fffdf0; } /* Resalta el límite diario */
+        
         /* Formularios y Tablas */
         .form-container, .tabla-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
         .form-group { margin-bottom: 15px; }
@@ -41,7 +46,7 @@
         <a href="index.php?action=logout" style="color: #ff4c4c; float: right; text-decoration: none; font-weight: bold;">Cerrar Sesión</a>
     </nav>
 
-    <h2>Dashboard Financiero</h2>
+    <h2>Dashboard Financiero (Mes Actual)</h2>
 
     <?php if (!empty($datos['alertas'])): ?>
         <div style="background-color: #f8d7da; color: #721c24; padding: 15px; margin-bottom: 20px; border: 1px solid #f5c6cb; border-radius: 5px;">
@@ -55,30 +60,39 @@
     <?php endif; ?>
 
     <div class="resumen-container">
+        
+        <div class="tarjeta tarjeta-destacada">
+            <h3>Límite Diario Seguro</h3>
+            <p class="<?= $datos['limite_diario_seguro'] > 0 ? 'ingreso' : 'gasto' ?>">
+                $<?= number_format($datos['limite_diario_seguro'], 2) ?>
+            </p>
+            <span style="font-size: 0.85em; color: #666;">Por los próximos <?= $datos['dias_restantes'] ?> días</span>
+        </div>
+
         <div class="tarjeta">
-            <h3>Total Ingresos</h3>
+            <h3>Ingresos del Mes</h3>
             <p class="ingreso">$<?= number_format($datos['ingresos'], 2) ?></p>
         </div>
         <div class="tarjeta">
-            <h3>Total Gastos</h3>
+            <h3>Gastos del Mes</h3>
             <p class="gasto">$<?= number_format($datos['gastos'], 2) ?></p>
         </div>
         <div class="tarjeta">
-            <h3>Flujo de Caja (Liquidez)</h3>
+            <h3>Liquidez Restante</h3>
             <p class="<?= $datos['liquidez'] >= 0 ? 'ingreso' : 'gasto' ?>">$<?= number_format($datos['liquidez'], 2) ?></p>
         </div>
         <div class="tarjeta">
-            <h3>Pasivos (Deuda Total)</h3>
+            <h3>Pasivos Totales</h3>
             <p class="gasto">$<?= number_format($datos['total_deudas'], 2) ?></p>
         </div>
         <div class="tarjeta" style="border: 2px solid <?= $datos['patrimonio_neto'] >= 0 ? '#28a745' : '#dc3545' ?>;">
-            <h3>Patrimonio Neto Real</h3>
+            <h3>Patrimonio Neto</h3>
             <p class="<?= $datos['patrimonio_neto'] >= 0 ? 'ingreso' : 'gasto' ?>">$<?= number_format($datos['patrimonio_neto'], 2) ?></p>
         </div>
     </div>
 
     <div style="width: 100%; max-width: 600px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-        <h3 style="text-align: center; color: #333;">Distribución de Gastos</h3>
+        <h3 style="text-align: center; color: #333;">Distribución de Gastos (Este Mes)</h3>
         <canvas id="graficoGastos"></canvas>
     </div>
 
@@ -136,7 +150,7 @@
                 <?php if (!empty($datos['transacciones'])): ?>
                     <?php foreach ($datos['transacciones'] as $transaccion): ?>
                         <tr>
-                            <td><?= $transaccion['fecha_transaccion'] ?></td>
+                            <td><?= date('d/m/Y', strtotime($transaccion['fecha_transaccion'])) ?></td>
                             <td><?= htmlspecialchars($transaccion['nombre_categoria']) ?></td>
                             <td><?= htmlspecialchars($transaccion['descripcion']) ?></td>
                             <td class="<?= $transaccion['tipo_flujo'] === 'ingreso' ? 'ingreso' : 'gasto' ?>">
@@ -147,7 +161,7 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5" style="text-align: center;">No hay transacciones registradas.</td>
+                        <td colspan="5" style="text-align: center;">No hay transacciones registradas este mes.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -159,7 +173,6 @@
     <script>
         const ctx = document.getElementById('graficoGastos').getContext('2d');
 
-        // El motor PHP inyecta el JSON formateado directamente en las variables de JavaScript
         const etiquetas = <?= $datos['grafico_etiquetas'] ?>;
         const valores = <?= $datos['grafico_valores'] ?>;
 
