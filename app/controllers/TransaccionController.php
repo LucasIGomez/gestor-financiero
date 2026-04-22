@@ -40,7 +40,7 @@ class TransaccionController {
     }
 
     public function obtenerDatosDashboard($id_usuario) {
-        // 4. Ejecución del motor de automatización antes de renderizar la vista
+        // Ejecución del motor de automatización antes de renderizar la vista
         $this->automatizarGastosRecurrentes($id_usuario);
 
         // Bloque original de cálculo de balances
@@ -52,11 +52,21 @@ class TransaccionController {
         $total_gastos = 0;
         $total_deudas = 0;
 
+        // NUEVO: Array para agrupar gastos específicos por categoría
+        $gastos_por_categoria = [];
+
         foreach ($transacciones as $transaccion) {
             if ($transaccion['tipo_flujo'] === 'ingreso') {
                 $total_ingresos += $transaccion['monto'];
             } elseif ($transaccion['tipo_flujo'] === 'gasto') {
                 $total_gastos += $transaccion['monto'];
+                
+                // NUEVO: Lógica de agrupación matemática
+                $nombre_cat = $transaccion['nombre_categoria'];
+                if (!isset($gastos_por_categoria[$nombre_cat])) {
+                    $gastos_por_categoria[$nombre_cat] = 0;
+                }
+                $gastos_por_categoria[$nombre_cat] += $transaccion['monto'];
             }
         }
 
@@ -67,14 +77,21 @@ class TransaccionController {
         $liquidez_actual = $total_ingresos - $total_gastos;
         $patrimonio_neto = $liquidez_actual - $total_deudas;
 
+        // NUEVO: Codificación a JSON para que la Vista y Chart.js puedan leerlos
+        $grafico_etiquetas = json_encode(array_keys($gastos_por_categoria));
+        $grafico_valores = json_encode(array_values($gastos_por_categoria));
+
         return [
-            'transacciones'   => $transacciones,
-            'categorias'      => $categorias,
-            'ingresos'        => $total_ingresos,
-            'gastos'          => $total_gastos,
-            'liquidez'        => $liquidez_actual,
-            'total_deudas'    => $total_deudas,
-            'patrimonio_neto' => $patrimonio_neto
+            'transacciones'     => $transacciones,
+            'categorias'        => $categorias,
+            'ingresos'          => $total_ingresos,
+            'gastos'            => $total_gastos,
+            'liquidez'          => $liquidez_actual,
+            'total_deudas'      => $total_deudas,
+            'patrimonio_neto'   => $patrimonio_neto,
+            // Empaquetamos los datos del gráfico
+            'grafico_etiquetas' => $grafico_etiquetas,
+            'grafico_valores'   => $grafico_valores
         ];
     }
 
