@@ -30,14 +30,14 @@
 </head>
 <body>
 
-    <nav>
-        <a href="index.php?action=dashboard">Dashboard</a>
-        <a href="index.php?action=gastos_recurrentes">Gastos Fijos</a>
-        <a href="index.php?action=deudas">Deudas</a>
-        <a href="index.php?action=inversiones">Inversiones</a>
-        <a href="index.php?action=metas">Metas de Ahorro</a>
-        <a href="index.php?action=impuestos">Fiscal</a>
-        <a href="index.php?action=logout" style="color: #ff4c4c; float: right;">Cerrar Sesión</a>
+    <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+        <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard</a>
+        <a href="index.php?action=gastos_recurrentes" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Gastos Fijos</a>
+        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Deudas</a>
+        <a href="index.php?action=inversiones" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Inversiones</a>
+        <a href="index.php?action=metas" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Metas de Ahorro</a>
+        <a href="index.php?action=impuestos" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Fiscal</a>
+        <a href="index.php?action=logout" style="color: #ff4c4c; float: right; text-decoration: none; font-weight: bold;">Cerrar Sesión</a>
     </nav>
 
     <h2>Gestión de Metas y Fondo de Emergencia</h2>
