@@ -77,7 +77,20 @@ class TransaccionController {
         $liquidez_actual = $total_ingresos - $total_gastos;
         $patrimonio_neto = $liquidez_actual - $total_deudas;
 
-        // NUEVO: Codificación a JSON para que la Vista y Chart.js puedan leerlos
+        // NUEVO: Motor de Alertas de Presupuesto (Regla del 20%)
+        $alertas = [];
+        if ($total_ingresos > 0) {
+            foreach ($gastos_por_categoria as $nombre_cat => $monto_gastado) {
+                $porcentaje = ($monto_gastado / $total_ingresos) * 100;
+                
+                // Si el gasto en una categoría supera el 20% de los ingresos, generar alerta
+                if ($porcentaje > 20) {
+                    $alertas[] = "¡Atención! Has destinado el " . round($porcentaje, 1) . "% de tus ingresos a '$nombre_cat'. Evalúa reducir este gasto.";
+                }
+            }
+        }
+
+        // Codificación a JSON para Chart.js
         $grafico_etiquetas = json_encode(array_keys($gastos_por_categoria));
         $grafico_valores = json_encode(array_values($gastos_por_categoria));
 
@@ -89,9 +102,9 @@ class TransaccionController {
             'liquidez'          => $liquidez_actual,
             'total_deudas'      => $total_deudas,
             'patrimonio_neto'   => $patrimonio_neto,
-            // Empaquetamos los datos del gráfico
             'grafico_etiquetas' => $grafico_etiquetas,
-            'grafico_valores'   => $grafico_valores
+            'grafico_valores'   => $grafico_valores,
+            'alertas'           => $alertas // NUEVO: Pasamos las alertas a la Vista
         ];
     }
 

@@ -5,53 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Gestor Financiero</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .resumen { display: flex; gap: 20px; margin-bottom: 30px; }
-        .tarjeta { border: 1px solid #ccc; padding: 20px; border-radius: 5px; min-width: 200px; }
-        .ingreso { color: green; font-weight: bold; }
-        .gasto { color: red; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        /* Barra de Navegación */
+        nav { background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        nav a { color: white; text-decoration: none; font-weight: bold; margin-right: 20px; }
+        /* Tarjetas de Resumen */
+        .resumen-container { display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tarjeta { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); flex: 1; min-width: 150px; text-align: center; }
+        .tarjeta h3 { margin-top: 0; font-size: 1.1em; color: #555; }
+        .tarjeta p { font-size: 1.5em; font-weight: bold; margin: 0; }
+        .ingreso { color: #28a745; }
+        .gasto { color: #dc3545; }
+        .neutro { color: #007bff; }
+        /* Formularios y Tablas */
+        .form-container, .tabla-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        button:hover { background-color: #0056b3; }
+        table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        .form-container { margin-bottom: 30px; padding: 20px; border: 1px solid #007bff; border-radius: 5px; }
-        .form-group { margin-bottom: 10px; }
+        th { background-color: #007bff; color: white; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <nav style="background-color: #333; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-        <a href="index.php?action=dashboard" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Dashboard</a>
-        <a href="index.php?action=gastos_recurrentes" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Gastos Fijos</a>
-        <a href="index.php?action=deudas" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Deudas</a>
-        <a href="index.php?action=inversiones" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Inversiones</a>
-        <a href="index.php?action=impuestos" style="color: white; text-decoration: none; font-weight: bold; margin-right: 20px;">Fiscal</a>
-        <a href="index.php?action=logout" style="color: #ff4c4c; float: right; text-decoration: none; font-weight: bold;">Cerrar Sesión</a>
+
+    <nav>
+        <a href="index.php?action=dashboard">Dashboard</a>
+        <a href="index.php?action=gastos_recurrentes">Gastos Fijos</a>
+        <a href="index.php?action=deudas">Deudas</a>
+        <a href="index.php?action=inversiones">Inversiones</a>
+        <a href="index.php?action=impuestos">Fiscal</a>
+        <a href="index.php?action=logout" style="color: #ff4c4c; float: right;">Cerrar Sesión</a>
     </nav>
 
-    <h1>Dashboard Financiero</h1>
+    <h2>Dashboard Financiero</h2>
 
-    <div class="resumen">
+    <?php if (!empty($datos['alertas'])): ?>
+        <div style="background-color: #f8d7da; color: #721c24; padding: 15px; margin-bottom: 20px; border: 1px solid #f5c6cb; border-radius: 5px;">
+            <h4 style="margin-top: 0; color: #721c24;">⚠️ Alertas de Comportamiento Financiero</h4>
+            <ul style="margin-bottom: 0;">
+                <?php foreach ($datos['alertas'] as $alerta): ?>
+                    <li><strong><?= $alerta ?></strong></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <div class="resumen-container">
         <div class="tarjeta">
-            <h3>Ingresos Históricos</h3>
+            <h3>Total Ingresos</h3>
             <p class="ingreso">$<?= number_format($datos['ingresos'], 2) ?></p>
         </div>
         <div class="tarjeta">
-            <h3>Gastos Históricos</h3>
+            <h3>Total Gastos</h3>
             <p class="gasto">$<?= number_format($datos['gastos'], 2) ?></p>
         </div>
-        <div class="tarjeta" style="background-color: #e9ecef;">
-            <h3>Liquidez Disponible</h3>
-            <p><strong>$<?= number_format($datos['liquidez'], 2) ?></strong></p>
+        <div class="tarjeta">
+            <h3>Flujo de Caja (Liquidez)</h3>
+            <p class="<?= $datos['liquidez'] >= 0 ? 'ingreso' : 'gasto' ?>">$<?= number_format($datos['liquidez'], 2) ?></p>
         </div>
-        <div class="tarjeta" style="border-color: #dc3545;">
-            <h3 style="color: #dc3545;">Pasivos (Deuda Total)</h3>
-            <p class="gasto">-$<?= number_format($datos['total_deudas'], 2) ?></p>
+        <div class="tarjeta">
+            <h3>Pasivos (Deuda Total)</h3>
+            <p class="gasto">$<?= number_format($datos['total_deudas'], 2) ?></p>
         </div>
-        <div class="tarjeta" style="background-color: <?= $datos['patrimonio_neto'] >= 0 ? '#d4edda' : '#f8d7da' ?>; border-color: <?= $datos['patrimonio_neto'] >= 0 ? '#c3e6cb' : '#f5c6cb' ?>;">
+        <div class="tarjeta" style="border: 2px solid <?= $datos['patrimonio_neto'] >= 0 ? '#28a745' : '#dc3545' ?>;">
             <h3>Patrimonio Neto Real</h3>
-            <p style="color: <?= $datos['patrimonio_neto'] >= 0 ? 'green' : 'red' ?>;">
-                <strong>$<?= number_format($datos['patrimonio_neto'], 2) ?></strong>
-            </p>
+            <p class="<?= $datos['patrimonio_neto'] >= 0 ? 'ingreso' : 'gasto' ?>">$<?= number_format($datos['patrimonio_neto'], 2) ?></p>
         </div>
     </div>
 
@@ -61,64 +82,78 @@
     </div>
 
     <div class="form-container">
-        <h2>Registrar Nueva Transacción</h2>
+        <h3>Registrar Nueva Transacción</h3>
         <form action="index.php?action=registrar" method="POST">
             <div class="form-group">
                 <label>Categoría:</label>
                 <select name="id_categoria" required>
-                    <option value="">Seleccione una categoría...</option>
-                    <?php foreach ($datos['categorias'] as $cat): ?>
-                        <option value="<?= $cat['id_categoria'] ?>">
-                            <?= htmlspecialchars($cat['nombre_categoria']) ?> (<?= strtoupper($cat['tipo_flujo']) ?>)
-                        </option>
-                    <?php endforeach; ?>
+                    <optgroup label="Ingresos">
+                        <?php foreach ($datos['categorias'] as $categoria): ?>
+                            <?php if ($categoria['tipo_flujo'] === 'ingreso'): ?>
+                                <option value="<?= $categoria['id_categoria'] ?>"><?= htmlspecialchars($categoria['nombre_categoria']) ?></option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </optgroup>
+                    <optgroup label="Gastos">
+                        <?php foreach ($datos['categorias'] as $categoria): ?>
+                            <?php if ($categoria['tipo_flujo'] === 'gasto'): ?>
+                                <option value="<?= $categoria['id_categoria'] ?>"><?= htmlspecialchars($categoria['nombre_categoria']) ?></option>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </optgroup>
                 </select>
             </div>
-            
             <div class="form-group">
                 <label>Monto ($):</label>
                 <input type="number" step="0.01" name="monto" required min="0.01">
             </div>
-
             <div class="form-group">
-                <label>Descripción (Opcional):</label>
-                <input type="text" name="descripcion" maxlength="255">
+                <label>Descripción:</label>
+                <input type="text" name="descripcion" maxlength="255" placeholder="Ej. Compra de supermercado">
             </div>
-
             <div class="form-group">
                 <label>Fecha:</label>
                 <input type="date" name="fecha_transaccion" required value="<?= date('Y-m-d') ?>">
             </div>
-
             <button type="submit">Guardar Transacción</button>
         </form>
     </div>
 
-    <h2>Historial de Movimientos</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                <th>Categoría</th>
-                <th>Descripción</th>
-                <th>Tipo</th>
-                <th>Monto</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($datos['transacciones'] as $t): ?>
+    <div class="tabla-container">
+        <h3>Historial de Movimientos</h3>
+        <table>
+            <thead>
                 <tr>
-                    <td><?= date('d/m/Y', strtotime($t['fecha_transaccion'])) ?></td>
-                    <td><?= htmlspecialchars($t['nombre_categoria']) ?></td>
-                    <td><?= htmlspecialchars($t['descripcion']) ?></td>
-                    <td><?= strtoupper($t['tipo_flujo']) ?></td>
-                    <td class="<?= $t['tipo_flujo'] === 'ingreso' ? 'ingreso' : 'gasto' ?>">
-                        $<?= number_format($t['monto'], 2) ?>
-                    </td>
+                    <th>Fecha</th>
+                    <th>Categoría</th>
+                    <th>Descripción</th>
+                    <th>Tipo</th>
+                    <th>Monto</th>
                 </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <?php if (!empty($datos['transacciones'])): ?>
+                    <?php foreach ($datos['transacciones'] as $transaccion): ?>
+                        <tr>
+                            <td><?= $transaccion['fecha_transaccion'] ?></td>
+                            <td><?= htmlspecialchars($transaccion['nombre_categoria']) ?></td>
+                            <td><?= htmlspecialchars($transaccion['descripcion']) ?></td>
+                            <td class="<?= $transaccion['tipo_flujo'] === 'ingreso' ? 'ingreso' : 'gasto' ?>">
+                                <?= ucfirst($transaccion['tipo_flujo']) ?>
+                            </td>
+                            <td>$<?= number_format($transaccion['monto'], 2) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="5" style="text-align: center;">No hay transacciones registradas.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script>
         const ctx = document.getElementById('graficoGastos').getContext('2d');
@@ -128,19 +163,14 @@
         const valores = <?= $datos['grafico_valores'] ?>;
 
         new Chart(ctx, {
-            type: 'doughnut', // Define un gráfico de anillo moderno
+            type: 'doughnut',
             data: {
                 labels: etiquetas,
                 datasets: [{
                     data: valores,
                     backgroundColor: [
-                        '#FF6384', // Rojo/Rosa
-                        '#36A2EB', // Azul
-                        '#FFCE56', // Amarillo
-                        '#4BC0C0', // Turquesa
-                        '#9966FF', // Violeta
-                        '#FF9F40', // Naranja
-                        '#C9CBCF'  // Gris
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                        '#9966FF', '#FF9F40', '#C9CBCF', '#E7E9ED'
                     ],
                     borderWidth: 1
                 }]
@@ -149,12 +179,11 @@
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'right', // Coloca las etiquetas a la derecha del gráfico
+                        position: 'right',
                     }
                 }
             }
         });
     </script>
-
 </body>
 </html>
