@@ -2,82 +2,107 @@
 require_once 'app/models/DeudaModel.php';
 
 class DeudaController {
-    private $modelo;
+    private $deudaModel;
 
     public function __construct() {
-        $this->modelo = new DeudaModel();
+        $this->deudaModel = new DeudaModel();
     }
 
-    // [Existente] Obtiene las deudas ya ordenadas por el Modelo
-    public function obtenerResumenAvalancha($id_usuario) {
-        return $this->modelo->obtenerDeudasAvalancha($id_usuario);
-    }
+    // Extrae y simula el pago de deudas basado en el CFT
+    public function obtenerDatosDeudas($id_usuario) {
+        $deudas = $this->deudaModel->obtenerDeudasAvalancha($id_usuario);
+        
+        foreach ($deudas as &$deuda) {
+            $pago_extra = 50000; 
+            $saldo = $deuda['saldo_total'];
+            $cuota = $deuda['cuota_mensual'];
+            
+            // Transformación matemática: ahora la capitalización se calcula sobre el CFT
+            $tasa_mensual = ($deuda['cft'] / 12) / 100;
 
-    // [NUEVO] Procesa y valida el registro de una nueva deuda
-    public function procesarNuevaDeuda($id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual) {
-        $validacion = $this->validarDatosDeuda($saldo_total, $tasa_intereses, $cuota_mensual);
-        if ($validacion !== true) {
-            return $validacion; // Retorna el mensaje de error
+            if ($cuota > ($saldo * $tasa_mensual)) {
+                $meses_originales = $this->calcularMesesAmortizacion($saldo, $tasa_mensual, $cuota);
+                $meses_nuevos = $this->calcularMesesAmortizacion($saldo, $tasa_mensual, $cuota + $pago_extra);
+                
+                $deuda['meses_ahorrados'] = $meses_originales - $meses_nuevos;
+                
+                $costo_original = ($meses_originales * $cuota) - $saldo;
+                $costo_nuevo = ($meses_nuevos * ($cuota + $pago_extra)) - $saldo;
+                
+                $deuda['intereses_ahorrados'] = $costo_original - $costo_nuevo;
+            } else {
+                $deuda['meses_ahorrados'] = 0;
+                $deuda['intereses_ahorrados'] = 0;
+            }
         }
-
-        $exito = $this->modelo->registrarDeuda($id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual);
-        return $exito ? true : "Error: No se pudo registrar la deuda en la base de datos.";
+        
+        return $deudas;
     }
 
-    // [NUEVO] Procesa y valida la actualización de una deuda existente
-    public function procesarActualizacionDeuda($id_deuda, $id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual) {
-        $validacion = $this->validarDatosDeuda($saldo_total, $tasa_intereses, $cuota_mensual);
-        if ($validacion !== true) {
-            return $validacion;
-        }
-
-        $exito = $this->modelo->actualizarDeuda($id_deuda, $id_usuario, $nombre_deuda, $saldo_total, $tasa_intereses, $cuota_mensual);
-        return $exito ? true : "Error: No se pudo actualizar la deuda en la base de datos.";
+    public function obtenerDeuda($id_deuda, $id_usuario) {
+        return $this->deudaModel->obtenerDeudaPorId($id_deuda, $id_usuario);
     }
 
-    // [NUEVO] Función privada para centralizar las reglas de negocio
-    private function validarDatosDeuda($saldo_total, $tasa_intereses, $cuota_mensual) {
-        if ($saldo_total <= 0) return "Error: El saldo total debe ser mayor a cero.";
-        if ($tasa_intereses < 0) return "Error: La tasa de interés no puede ser negativa.";
-        if ($cuota_mensual <= 0) return "Error: La cuota mensual debe ser mayor a cero.";
-        return true;
+    public function procesarNuevaDeuda($post_data, $id_usuario) {
+        $datos = $this->empaquetarDatos($post_data, $id_usuario);
+        
+        $validacion = $this->validarDatosDeuda($datos);
+        if ($validacion !== true) return $validacion;
+
+        $exito = $this->deudaModel->registrarDeuda($datos);
+        return $exito ? true : "Error: No se pudo registrar la deuda.";
     }
 
-    // [Existente] Simula el impacto de un pago extra en una deuda específica
-    public function simularPagoExtra($saldo, $tasa_anual, $cuota_minima, $pago_extra) {
-        $r = ($tasa_anual / 100) / 12;
-        $cuota_nueva = $cuota_minima + $pago_extra;
+    public function procesarEdicionDeuda($post_data, $id_usuario) {
+        $datos = $this->empaquetarDatos($post_data, $id_usuario);
+        $datos['id_deuda'] = $post_data['id_deuda']; // Requerido para el UPDATE
+        
+        $validacion = $this->validarDatosDeuda($datos);
+        if ($validacion !== true) return $validacion;
 
-        $meses_normal = $this->calcularMesesAmortizacion($saldo, $r, $cuota_minima);
-        $meses_extra = $this->calcularMesesAmortizacion($saldo, $r, $cuota_nueva);
+        $exito = $this->deudaModel->actualizarDeuda($datos);
+        return $exito ? true : "Error: No se pudo actualizar la deuda.";
+    }
 
-        if ($meses_normal === INF) {
-            return "La cuota mínima no cubre los intereses generados. Deuda impagable.";
-        }
-
-        $interes_normal = ($meses_normal * $cuota_minima) - $saldo;
-        $interes_extra = ($meses_extra * $cuota_nueva) - $saldo;
-
+    // Aisla el formateo de datos y el manejo de variables nulas
+    private function empaquetarDatos($post, $id_usuario) {
         return [
-            'meses_original' => ceil($meses_normal),
-            'meses_con_extra' => ceil($meses_extra),
-            'ahorro_meses' => ceil($meses_normal - $meses_extra),
-            'ahorro_intereses' => round($interes_normal - $interes_extra, 2)
+            'id_usuario'      => $id_usuario,
+            'nombre_deuda'    => $post['nombre_deuda'],
+            'tipo_deuda'      => $post['tipo_deuda'],
+            'saldo_total'     => $post['saldo_total'],
+            'cft'             => $post['cft'],
+            'tna'             => !empty($post['tna']) ? $post['tna'] : null,
+            'tea'             => !empty($post['tea']) ? $post['tea'] : null,
+            'cuota_mensual'   => !empty($post['cuota_mensual']) ? $post['cuota_mensual'] : 0,
+            'limite_credito'  => !empty($post['limite_credito']) ? $post['limite_credito'] : null,
+            'dia_cierre'      => !empty($post['dia_cierre']) ? $post['dia_cierre'] : null,
+            'dia_vencimiento' => !empty($post['dia_vencimiento']) ? $post['dia_vencimiento'] : null,
+            'cuotas_totales'  => !empty($post['cuotas_totales']) ? $post['cuotas_totales'] : null,
+            'cuotas_pagadas'  => !empty($post['cuotas_pagadas']) ? $post['cuotas_pagadas'] : null,
+            'fecha_inicio'    => !empty($post['fecha_inicio']) ? $post['fecha_inicio'] : null
         ];
     }
 
-    // [Existente] Algoritmo interno para calcular el tiempo de liquidación
-    private function calcularMesesAmortizacion($P, $r, $A) {
-        if ($A <= ($P * $r)) {
-            return INF; 
+    // Inteligencia de negocio para validar la realidad bancaria
+    private function validarDatosDeuda($datos) {
+        if ($datos['saldo_total'] < 0) return "Error: El saldo total no puede ser negativo.";
+        if ($datos['cft'] <= 0) return "Error: El CFT debe ser mayor a cero para el cálculo avalancha.";
+        
+        if ($datos['tipo_deuda'] === 'prestamo' && $datos['cuota_mensual'] <= 0) {
+            return "Error: Los préstamos requieren una cuota mensual pactada mayor a cero.";
         }
-        $n = -log(1 - ($r * $P) / $A) / log(1 + $r);
-        return $n;
+        
+        if ($datos['tipo_deuda'] === 'tarjeta_credito' && empty($datos['limite_credito'])) {
+            return "Error: Las tarjetas de crédito requieren establecer un límite de crédito.";
+        }
+
+        return true;
     }
-    
-    // Extrae una deuda validando que pertenezca al usuario
-    public function obtenerDeudaEspecifica($id_deuda, $id_usuario) {
-        return $this->modelo->obtenerDeudaPorId($id_deuda, $id_usuario);
+
+    private function calcularMesesAmortizacion($principal, $tasa_mensual, $pago_mensual) {
+        if ($tasa_mensual == 0) return $principal / $pago_mensual;
+        return -log(1 - ($tasa_mensual * $principal) / $pago_mensual) / log(1 + $tasa_mensual);
     }
 }
 ?>
