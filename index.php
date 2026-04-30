@@ -75,22 +75,22 @@ if ($action === 'login') {
 // ==========================================
 
 // Módulo: Transacciones (Crear)
-elseif ($action === 'registrar' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id_categoria = $_POST['id_categoria'];
-    $monto = $_POST['monto'];
-    $descripcion = $_POST['descripcion'];
-    $fecha = $_POST['fecha_transaccion'];
-
-    $resultado = $transaccionController->procesarNuevaTransaccion($id_usuario_actual, $id_categoria, $monto, $descripcion, $fecha);
-
-    if ($resultado === true) {
-        header('Location: index.php?action=dashboard');
-        exit;
-    } else {
-        echo "<h3 style='color:red;'>$resultado</h3>";
-        echo "<a href='index.php'>Volver</a>";
-        exit;
-    }
+elseif ($action === 'registrar') {
+        $id_deuda_post = !empty($_POST['id_deuda']) ? $_POST['id_deuda'] : null;
+        $resultado = $transaccionController->procesarNuevaTransaccion(
+            $_SESSION['id_usuario'], 
+            $_POST['id_categoria'], 
+            $_POST['monto'], 
+            $_POST['descripcion'], 
+            $_POST['fecha_transaccion'],
+            $id_deuda_post
+        );
+        if ($resultado === true) {
+            header("Location: index.php?action=dashboard");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
 }
 
 // Módulo: Deudas (Crear)

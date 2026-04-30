@@ -57,5 +57,25 @@ class DeudaModel {
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($datos);
     }
+
+    // Obtiene solo las tarjetas de crédito del usuario para el menú desplegable
+    public function obtenerTarjetasCredito($id_usuario) {
+        $sql = "SELECT id_deuda, nombre_deuda FROM deudas WHERE id_usuario = :id_usuario AND tipo_deuda = 'tarjeta_credito'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Suma automáticamente un nuevo gasto al saldo de la tarjeta
+    public function sumarGastoTarjeta($id_deuda, $id_usuario, $monto) {
+        $sql = "UPDATE deudas SET saldo_total = saldo_total + :monto 
+                WHERE id_deuda = :id_deuda AND id_usuario = :id_usuario AND tipo_deuda = 'tarjeta_credito'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':monto', $monto, PDO::PARAM_STR);
+        $stmt->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }
 ?>

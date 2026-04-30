@@ -119,6 +119,19 @@
                 </select>
             </div>
             <div class="form-group">
+                <label>Método de Pago:</label>
+                <select name="id_deuda">
+                    <option value="">Efectivo / Débito (Descuenta de mi Liquidez)</option>
+                    <?php if (!empty($datos['tarjetas'])): ?>
+                        <optgroup label="Tarjetas de Crédito Registradas">
+                            <?php foreach ($datos['tarjetas'] as $tarjeta): ?>
+                                <option value="<?= $tarjeta['id_deuda'] ?>"><?= htmlspecialchars($tarjeta['nombre_deuda']) ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endif; ?>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>Monto ($):</label>
                 <input type="number" step="0.01" name="monto" required min="0.01">
             </div>

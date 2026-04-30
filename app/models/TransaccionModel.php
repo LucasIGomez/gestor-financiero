@@ -24,16 +24,24 @@ class TransaccionModel {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Registra una nueva transacción en el flujo de caja
-    public function registrarTransaccion($id_usuario, $id_categoria, $monto, $descripcion, $fecha_transaccion) {
-        $sql = "INSERT INTO transacciones (id_usuario, id_categoria, monto, descripcion, fecha_transaccion) 
-                VALUES (:id_usuario, :id_categoria, :monto, :descripcion, :fecha_transaccion)";
+    // Registra una nueva transacción en el flujo de caja, vinculándola opcionalmente a una tarjeta
+    public function registrarTransaccion($id_usuario, $id_categoria, $monto, $descripcion, $fecha_transaccion, $id_deuda = null) {
+        $sql = "INSERT INTO transacciones (id_usuario, id_categoria, monto, descripcion, fecha_transaccion, id_deuda) 
+                VALUES (:id_usuario, :id_categoria, :monto, :descripcion, :fecha_transaccion, :id_deuda)";
         $stmt = $this->db->prepare($sql);
         $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
         $stmt->bindParam(':id_categoria', $id_categoria, PDO::PARAM_INT);
         $stmt->bindParam(':monto', $monto, PDO::PARAM_STR);
         $stmt->bindParam(':descripcion', $descripcion, PDO::PARAM_STR);
         $stmt->bindParam(':fecha_transaccion', $fecha_transaccion, PDO::PARAM_STR);
+        
+        // Manejo estricto de variables nulas para PDO
+        if (empty($id_deuda)) {
+            $stmt->bindValue(':id_deuda', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        }
+        
         return $stmt->execute();
     }
 }

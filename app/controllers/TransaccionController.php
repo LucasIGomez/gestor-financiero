@@ -49,6 +49,7 @@ class TransaccionController {
         $categorias = $this->categoriaModel->obtenerCategorias($id_usuario);
         $deudas = $this->deudaModel->obtenerDeudasAvalancha($id_usuario);
         $metas = $this->metaModel->obtenerMetasUsuario($id_usuario);
+        $tarjetas = $this->deudaModel->obtenerTarjetasCredito($id_usuario);
 
         $total_ingresos = 0;
         $total_gastos = 0;
@@ -115,14 +116,28 @@ class TransaccionController {
             'alertas'              => $alertas,
             // Empaquetamos las variables del nuevo algoritmo para la Vista
             'limite_diario_seguro' => $limite_diario_seguro,
-            'dias_restantes'       => $dias_restantes
+            'dias_restantes'       => $dias_restantes,
+            'tarjetas'             => $tarjetas
         ];
     }
 
-    public function procesarNuevaTransaccion($id_usuario, $id_categoria, $monto, $descripcion, $fecha_transaccion) {
+    public function procesarNuevaTransaccion($id_usuario, $id_categoria, $monto, $descripcion, $fecha_transaccion, $id_deuda = null) {
         if ($monto <= 0) return "Error: El monto de la transacción debe ser mayor a cero.";
-        $exito = $this->transaccionModel->registrarTransaccion($id_usuario, $id_categoria, $monto, $descripcion, $fecha_transaccion);
-        return $exito ? true : "Error: No se pudo registrar la transacción.";
+        
+        // Filtramos para asegurar que si viene vacío desde HTML, se convierta en null nativo
+        $id_deuda_procesado = !empty($id_deuda) ? $id_deuda : null;
+
+        $exito = $this->transaccionModel->registrarTransaccion($id_usuario, $id_categoria, $monto, $descripcion, $fecha_transaccion, $id_deuda_procesado);
+        
+        if ($exito) {
+            // Si la transacción se guardó y se usó una tarjeta, le sumamos la deuda automáticamente
+            if ($id_deuda_procesado) {
+                $this->deudaModel->sumarGastoTarjeta($id_deuda_procesado, $id_usuario, $monto);
+            }
+            return true;
+        }
+        
+        return "Error: No se pudo registrar la transacción.";
     }
 
     public function procesarNuevoGastoRecurrente($id_usuario, $id_categoria, $monto, $descripcion, $dia_cobro) {
