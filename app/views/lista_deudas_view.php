@@ -137,8 +137,21 @@
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <a href="index.php?action=editar_deuda&id=<?= $deuda['id_deuda'] ?>" class="action-link edit">Editar</a>
-                                <a href="index.php?action=eliminar_deuda&id=<?= $deuda['id_deuda'] ?>" class="action-link delete" onclick="return confirm('¿Eliminar este pasivo? Esta acción es irreversible.');">Eliminar</a>
+                                <div class="action-group">
+                                    <button type="button" class="action-link pay" onclick="togglePago(<?= $deuda['id_deuda'] ?>)">💰 Pagar</button>
+                                    <a href="index.php?action=editar_deuda&id=<?= $deuda['id_deuda'] ?>" class="action-link edit">Editar</a>
+                                    <a href="index.php?action=eliminar_deuda&id=<?= $deuda['id_deuda'] ?>" class="action-link delete" onclick="return confirm('¿Eliminar este pasivo? Esta acción es irreversible.');">Eliminar</a>
+                                </div>
+                                <!-- Formulario de pago inline -->
+                                <form id="pago-<?= $deuda['id_deuda'] ?>" class="pago-inline" style="display:none;" action="index.php?action=registrar_pago_deuda" method="POST">
+                                    <input type="hidden" name="id_deuda" value="<?= $deuda['id_deuda'] ?>">
+                                    <input type="number" step="0.01" name="monto_pago" required min="0.01" 
+                                           placeholder="$<?= number_format($deuda['cuota_mensual'], 0) ?>" 
+                                           value="<?= $deuda['cuota_mensual'] ?>"
+                                           style="width: 120px;">
+                                    <button type="submit" class="btn btn-success btn-sm">Confirmar</button>
+                                    <button type="button" class="btn btn-cancel btn-sm" onclick="togglePago(<?= $deuda['id_deuda'] ?>)">✕</button>
+                                </form>
                             </td>
                         </tr>
                     <?php $prioridad++; endforeach; ?>
@@ -157,6 +170,12 @@
             document.getElementById('campos_prestamo').style.display = tipo === 'prestamo' ? 'block' : 'none';
             document.getElementById('campos_tarjeta').style.display = tipo === 'tarjeta_credito' ? 'block' : 'none';
         }
+
+        function togglePago(id) {
+            const form = document.getElementById('pago-' + id);
+            form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+        }
+
         window.onload = toggleCampos;
     </script>
 

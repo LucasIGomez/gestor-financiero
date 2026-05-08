@@ -733,6 +733,39 @@ tbody tr:last-child td { border-bottom: none; }
 .action-link.delete { color: var(--red); }
 .action-link.delete:hover { background: var(--red-bg); }
 
+.action-link.pay {
+    color: var(--green);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+}
+.action-link.pay:hover { background: var(--green-bg); }
+
+.action-group {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pago-inline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid var(--green-border);
+    border-radius: var(--radius-sm);
+}
+
+.pago-inline input {
+    width: 120px !important;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
 /* ============================================================
    PRIORITY BADGE (Avalancha)
    ============================================================ */

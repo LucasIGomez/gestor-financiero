@@ -86,5 +86,25 @@ class DeudaModel {
         $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    // 6. Registra un pago contra una deuda (tarjeta o préstamo): resta saldo y sube cuotas pagadas
+    public function registrarPagoDeuda($id_deuda, $id_usuario, $monto) {
+        // Restar el monto del saldo total
+        $sql = "UPDATE deudas SET saldo_total = GREATEST(saldo_total - :monto, 0) 
+                WHERE id_deuda = :id_deuda AND id_usuario = :id_usuario";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':monto', $monto, PDO::PARAM_STR);
+        $stmt->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+
+        // Si es préstamo, incrementar cuotas pagadas
+        $sql2 = "UPDATE deudas SET cuotas_pagadas = cuotas_pagadas + 1 
+                 WHERE id_deuda = :id_deuda AND id_usuario = :id_usuario AND tipo_deuda = 'prestamo'";
+        $stmt2 = $this->db->prepare($sql2);
+        $stmt2->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt2->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        return $stmt2->execute();
+    }
 }
 ?>

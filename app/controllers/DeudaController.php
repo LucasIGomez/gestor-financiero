@@ -109,5 +109,37 @@ class DeudaController {
         if ($tasa_mensual == 0) return $principal / $pago_mensual;
         return -log(1 - ($tasa_mensual * $principal) / $pago_mensual) / log(1 + $tasa_mensual);
     }
+
+    // Procesa un pago contra una deuda: registra el gasto y reduce el saldo
+    public function procesarPagoDeuda($post_data, $id_usuario) {
+        $id_deuda = $post_data['id_deuda'] ?? null;
+        $monto = floatval($post_data['monto_pago'] ?? 0);
+
+        if (!$id_deuda || $monto <= 0) {
+            return "Error: Debe ingresar un monto válido.";
+        }
+
+        // Verificar que la deuda pertenece al usuario
+        $deuda = $this->deudaModel->obtenerDeudaPorId($id_deuda, $id_usuario);
+        if (!$deuda) {
+            return "Error: Deuda no encontrada.";
+        }
+
+        // Obtener o crear la categoría "Pago de Deudas"
+        require_once 'app/models/CategoriaModel.php';
+        $categoriaModel = new CategoriaModel();
+        $id_categoria = $categoriaModel->obtenerOCrearCategoriaPagoDeudas($id_usuario);
+
+        // Registrar como transacción de gasto (aparece en el dashboard)
+        require_once 'app/models/TransaccionModel.php';
+        $transaccionModel = new TransaccionModel();
+        $descripcion = "Pago: " . $deuda['nombre_deuda'];
+        $transaccionModel->registrarTransaccion($id_usuario, $id_categoria, $monto, $descripcion, date('Y-m-d'));
+
+        // Reducir el saldo de la deuda (y sumar cuota si es préstamo)
+        $this->deudaModel->registrarPagoDeuda($id_deuda, $id_usuario, $monto);
+
+        return true;
+    }
 }
 ?>

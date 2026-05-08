@@ -170,6 +170,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         require_once 'app/views/calculadora_impuestos_view.php';
         exit;
+
+    } elseif ($action === 'registrar_pago_deuda') {
+        $resultado = $deudaController->procesarPagoDeuda($_POST, $_SESSION['id_usuario']);
+        header("Location: index.php?action=deudas");
+        exit;
     }
 }
 
