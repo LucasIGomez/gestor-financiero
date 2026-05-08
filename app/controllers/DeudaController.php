@@ -64,6 +64,11 @@ class DeudaController {
         return $exito ? true : "Error: No se pudo actualizar la deuda.";
     }
 
+    public function procesarEliminacionDeuda($id_deuda, $id_usuario) {
+        $exito = $this->deudaModel->eliminarDeuda($id_deuda, $id_usuario);
+        return $exito ? true : "Error: No se pudo eliminar el registro.";
+    }
+
     // Aisla el formateo de datos y el manejo de variables nulas
     private function empaquetarDatos($post, $id_usuario) {
         return [
@@ -77,7 +82,7 @@ class DeudaController {
             'cuota_mensual'   => !empty($post['cuota_mensual']) ? $post['cuota_mensual'] : 0,
             'limite_credito'  => !empty($post['limite_credito']) ? $post['limite_credito'] : null,
             'dia_cierre'      => !empty($post['dia_cierre']) ? $post['dia_cierre'] : null,
-            'dia_vencimiento' => !empty($post['dia_vencimiento']) ? $post['dia_vencimiento'] : null,
+            'dia_vencimiento' => !empty($post['dia_vencimiento']) ? $post['dia_vencimiento'] : (!empty($post['dia_vencimiento_tarjeta']) ? $post['dia_vencimiento_tarjeta'] : null),
             'cuotas_totales'  => !empty($post['cuotas_totales']) ? $post['cuotas_totales'] : null,
             'cuotas_pagadas'  => !empty($post['cuotas_pagadas']) ? $post['cuotas_pagadas'] : null,
             'fecha_inicio'    => !empty($post['fecha_inicio']) ? $post['fecha_inicio'] : null

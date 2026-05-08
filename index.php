@@ -1,82 +1,72 @@
 <?php
-// 1. Inicialización de Sesiones (DEBE ser la primera línea)
 session_start();
 
-// Habilitar errores para entorno de desarrollo
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-// ==========================================
-// CARGA DE CONTROLADORES
-// ==========================================
+// 1. INCLUSIÓN DE CONTROLADORES
+require_once 'app/controllers/UsuarioController.php';
 require_once 'app/controllers/TransaccionController.php';
 require_once 'app/controllers/DeudaController.php';
-require_once 'app/controllers/InversionController.php';
-require_once 'app/controllers/ImpuestoController.php';
-require_once 'app/controllers/UsuarioController.php';
 require_once 'app/controllers/MetaController.php';
+require_once 'app/controllers/ImpuestoController.php';
+require_once 'app/controllers/InversionController.php';
 
-$metaController = new MetaController();
+// 2. INSTANCIACIÓN DE CONTROLADORES
+$usuarioController = new UsuarioController();
 $transaccionController = new TransaccionController();
 $deudaController = new DeudaController();
-$inversionController = new InversionController();
+$metaController = new MetaController();
 $impuestoController = new ImpuestoController();
-$usuarioController = new UsuarioController();
+$inversionController = new InversionController();
 
-$action = isset($_GET['action']) ? $_GET['action'] : 'dashboard';
+$action = $_GET['action'] ?? 'login';
 
-// ==========================================
-// 2. PROTECCIÓN DE RUTAS (MIDDLEWARE BÁSICO)
-// ==========================================
-$rutas_publicas = ['login', 'login_post', 'registro', 'registro_post'];
-$id_usuario_actual = isset($_SESSION['id_usuario']) ? $_SESSION['id_usuario'] : null;
-
-// Si no está logueado y la ruta solicitada no es pública, redirigir al login
-if (!$id_usuario_actual && !in_array($action, $rutas_publicas)) {
-    header('Location: index.php?action=login');
-    exit;
-}
-
-// ==========================================
-// 3. PROCESAMIENTO DE AUTENTICACIÓN
-// ==========================================
-
+// 3. RUTAS PÚBLICAS (AUTENTICACIÓN)
 if ($action === 'login') {
-    require_once 'app/views/login_view.php';
-} elseif ($action === 'login_post') {
-    $resultado = $usuarioController->procesarLogin($_POST['email'], $_POST['password']);
-    if ($resultado === true) {
-        header('Location: index.php?action=dashboard');
-        exit;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $resultado = $usuarioController->procesarLogin($_POST['email'], $_POST['password']);
+        if ($resultado === true) {
+            header("Location: index.php?action=bienvenida");
+            exit;
+        } else {
+            $error = $resultado;
+            require_once 'app/views/login_view.php';
+        }
     } else {
-        $error = $resultado;
         require_once 'app/views/login_view.php';
     }
+    exit;
 } elseif ($action === 'registro') {
-    require_once 'app/views/registro_view.php';
-} elseif ($action === 'registro_post') {
-    $resultado = $usuarioController->procesarRegistro($_POST['nombre'], $_POST['email'], $_POST['password']);
-    if ($resultado === true) {
-        // Redirigir al login tras un registro exitoso
-        header('Location: index.php?action=login');
-        exit;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $resultado = $usuarioController->procesarRegistro($_POST['nombre'], $_POST['email'], $_POST['password']);
+        if ($resultado === true) {
+            header("Location: index.php?action=login&registrado=1");
+            exit;
+        } else {
+            $error = $resultado;
+            require_once 'app/views/registro_view.php';
+        }
     } else {
-        $error = $resultado;
         require_once 'app/views/registro_view.php';
     }
+    exit;
 } elseif ($action === 'logout') {
     $usuarioController->cerrarSesion();
-    header('Location: index.php?action=login');
+    header("Location: index.php?action=login");
     exit;
 }
 
-// ==========================================
-// 4. PROCESAMIENTO DE FORMULARIOS (POST)
-// ==========================================
+// PROTECCIÓN DE RUTAS PRIVADAS
+if (!isset($_SESSION['id_usuario'])) {
+    header("Location: index.php?action=login");
+    exit;
+}
 
-// Módulo: Transacciones (Crear)
-elseif ($action === 'registrar') {
+// 4. PROCESAMIENTO DE FORMULARIOS (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+    if ($action === 'registrar') {
+        // Procesamiento de Nueva Transacción (Con soporte para tarjeta de crédito V3)
         $id_deuda_post = !empty($_POST['id_deuda']) ? $_POST['id_deuda'] : null;
+        
         $resultado = $transaccionController->procesarNuevaTransaccion(
             $_SESSION['id_usuario'], 
             $_POST['id_categoria'], 
@@ -85,172 +75,145 @@ elseif ($action === 'registrar') {
             $_POST['fecha_transaccion'],
             $id_deuda_post
         );
+        
         if ($resultado === true) {
             header("Location: index.php?action=dashboard");
             exit;
         } else {
             echo "<script>alert('$resultado'); window.history.back();</script>";
         }
-}
+        
+    } elseif ($action === 'registrar_deuda') {
+        // Procesamiento Masivo de Deudas / Tarjetas
+        $resultado = $deudaController->procesarNuevaDeuda($_POST, $_SESSION['id_usuario']);
+        if ($resultado === true) {
+            header("Location: index.php?action=deudas");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
+        
+    } elseif ($action === 'editar_deuda_procesar') {
+        // Actualización Masiva de Deudas / Tarjetas
+        $resultado = $deudaController->procesarEdicionDeuda($_POST, $_SESSION['id_usuario']);
+        if ($resultado === true) {
+            header("Location: index.php?action=deudas");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
+        
+    } elseif ($action === 'registrar_gasto_recurrente') {
+        // Registro de Gastos Fijos (Pseudo-Cron)
+        $resultado = $transaccionController->procesarNuevoGastoRecurrente(
+            $_SESSION['id_usuario'], 
+            $_POST['id_categoria'], 
+            $_POST['monto'], 
+            $_POST['descripcion'], 
+            $_POST['dia_cobro']
+        );
+        if ($resultado === true) {
+            header("Location: index.php?action=gastos_recurrentes");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
 
-// Módulo: Deudas (Crear)
-elseif ($action === 'registrar_deuda' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombre = $_POST['nombre_deuda'];
-    $saldo = $_POST['saldo_total'];
-    $tasa = $_POST['tasa_intereses'];
-    $cuota = $_POST['cuota_mensual'];
+    } elseif ($action === 'registrar_meta') {
+        // Registro de Nueva Meta de Ahorro
+        $resultado = $metaController->procesarNuevaMeta(
+            $_SESSION['id_usuario'],
+            $_POST['nombre_meta'],
+            $_POST['monto_objetivo'],
+            $_POST['fecha_limite']
+        );
+        if ($resultado === true) {
+            header("Location: index.php?action=metas");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
 
-    $resultado = $deudaController->procesarNuevaDeuda($id_usuario_actual, $nombre, $saldo, $tasa, $cuota);
+    } elseif ($action === 'agregar_ahorro') {
+        // Depósito de Ahorro en una Meta Existente
+        $resultado = $metaController->procesarAhorro(
+            $_POST['id_meta'],
+            $_SESSION['id_usuario'],
+            $_POST['monto_deposito']
+        );
+        if ($resultado === true) {
+            header("Location: index.php?action=metas");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
 
-    if ($resultado === true) {
-        header('Location: index.php?action=deudas');
+    } elseif ($action === 'inversiones') {
+        // Simulador de Interés Compuesto (POST calcula, luego renderiza)
+        $resultados = $inversionController->calcularProyeccion(
+            $_POST['inversion_inicial'],
+            $_POST['adicion_mensual'],
+            $_POST['tasa_anual'],
+            $_POST['anos']
+        );
+        require_once 'app/views/simulador_inversion_view.php';
         exit;
-    } else {
-        echo "<h3 style='color:red;'>$resultado</h3>";
-        echo "<a href='index.php?action=deudas'>Volver al Asesor de Deudas</a>";
+
+    } elseif ($action === 'impuestos') {
+        // Calculadora Fiscal (POST calcula, luego renderiza)
+        $resultados = $impuestoController->calcularReservaFiscal(
+            $_POST['ingresos_brutos'],
+            $_POST['gastos_deducibles'],
+            $_POST['porcentaje_iva'],
+            $_POST['porcentaje_ganancias'],
+            $_POST['porcentaje_iibb']
+        );
+        require_once 'app/views/calculadora_impuestos_view.php';
         exit;
     }
 }
 
-// Módulo: Deudas (Actualizar)
-elseif ($action === 'actualizar_deuda' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id_deuda = $_POST['id_deuda'];
-    $nombre = $_POST['nombre_deuda'];
-    $saldo = $_POST['saldo_total'];
-    $tasa = $_POST['tasa_intereses'];
-    $cuota = $_POST['cuota_mensual'];
+// 5. CARGA DE VISTAS (GET - RENDERIZADO)
+if ($action === 'bienvenida') {
+    require_once 'app/views/bienvenida_view.php';
 
-    $resultado = $deudaController->procesarActualizacionDeuda($id_deuda, $id_usuario_actual, $nombre, $saldo, $tasa, $cuota);
-
-    if ($resultado === true) {
-        header('Location: index.php?action=deudas');
-        exit;
-    } else {
-        echo "<h3 style='color:red;'>$resultado</h3>";
-        echo "<a href='index.php?action=deudas'>Volver al Asesor de Deudas</a>";
-        exit;
-    }
-}
-
-// Módulo: Gastos Recurrentes (Crear)
-elseif ($action === 'registrar_recurrente' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $resultado = $transaccionController->procesarNuevoGastoRecurrente(
-        $id_usuario_actual,
-        $_POST['id_categoria'],
-        $_POST['monto'],
-        $_POST['descripcion'],
-        $_POST['dia_cobro']
-    );
-
-    if ($resultado === true) {
-        header('Location: index.php?action=gastos_recurrentes');
-        exit;
-    } else {
-        echo "<h3 style='color:red;'>$resultado</h3>";
-        echo "<a href='index.php?action=gastos_recurrentes'>Volver</a>";
-        exit;
-    }
-}
-
-// Módulo: Metas (Crear Nueva)
-elseif ($action === 'registrar_meta' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $resultado = $metaController->procesarNuevaMeta(
-        $id_usuario_actual, $_POST['nombre_meta'], $_POST['monto_objetivo'], $_POST['fecha_limite']
-    );
-
-    if ($resultado === true) {
-        header('Location: index.php?action=metas');
-        exit;
-    } else {
-        echo "<h3 style='color:red;'>$resultado</h3><a href='index.php?action=metas'>Volver</a>";
-        exit;
-    }
-}
-
-// Módulo: Metas (Agregar Ahorro)
-elseif ($action === 'agregar_ahorro' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $resultado = $metaController->procesarAhorro(
-        $_POST['id_meta'], $id_usuario_actual, $_POST['monto_deposito']
-    );
-
-    if ($resultado === true) {
-        header('Location: index.php?action=metas');
-        exit;
-    } else {
-        echo "<h3 style='color:red;'>$resultado</h3><a href='index.php?action=metas'>Volver</a>";
-        exit;
-    }
-}
-
-// ==========================================
-// 5. CARGA DE VISTAS (GET - RENDERIZADO Y OTROS CÁLCULOS)
-// ==========================================
-
-elseif ($action === 'dashboard') {
-    $datos = $transaccionController->obtenerDatosDashboard($id_usuario_actual);
+} elseif ($action === 'dashboard') {
+    $datos = $transaccionController->obtenerDatosDashboard($_SESSION['id_usuario']);
     require_once 'app/views/dashboard_view.php';
-} 
-
-elseif ($action === 'deudas') {
-    $deudas = $deudaController->obtenerResumenAvalancha($id_usuario_actual);
-    $controlador = $deudaController; 
+    
+} elseif ($action === 'deudas') {
+    $datos = $deudaController->obtenerDatosDeudas($_SESSION['id_usuario']);
     require_once 'app/views/lista_deudas_view.php';
-} 
-
-elseif ($action === 'editar_deuda') {
+    
+} elseif ($action === 'editar_deuda') {
     if (isset($_GET['id'])) {
-        $deuda = $deudaController->obtenerDeudaEspecifica($_GET['id'], $id_usuario_actual);
+        $deuda = $deudaController->obtenerDeuda($_GET['id'], $_SESSION['id_usuario']);
         if ($deuda) {
             require_once 'app/views/editar_deuda_view.php';
         } else {
-            echo "<h2>Error: Deuda no encontrada o acceso denegado.</h2>";
-            echo "<a href='index.php?action=deudas'>Volver al Asesor de Deudas</a>";
+            echo "<script>alert('Error: Deuda no encontrada.'); window.location.href='index.php?action=deudas';</script>";
         }
-    } else {
-        echo "<h2>Error: ID de deuda no especificado.</h2>";
-        echo "<a href='index.php?action=deudas'>Volver al Asesor de Deudas</a>";
     }
-} 
-
-elseif ($action === 'inversiones') {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $inversion_inicial = $_POST['inversion_inicial'];
-        $adicion_mensual = $_POST['adicion_mensual'];
-        $tasa_anual = $_POST['tasa_anual'];
-        $anos = $_POST['anos'];
-        
-        $resultados = $inversionController->calcularProyeccion($inversion_inicial, $adicion_mensual, $tasa_anual, $anos);
+    
+} elseif ($action === 'eliminar_deuda') {
+    if (isset($_GET['id'])) {
+        $resultado = $deudaController->procesarEliminacionDeuda($_GET['id'], $_SESSION['id_usuario']);
+        header("Location: index.php?action=deudas");
+        exit;
     }
-    require_once 'app/views/simulador_inversion_view.php';
-} 
 
-elseif ($action === 'impuestos') {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $brutos = $_POST['ingresos_brutos'];
-        $deducibles = $_POST['gastos_deducibles'];
-        $iva = $_POST['porcentaje_iva'];
-        $iibb = $_POST['porcentaje_iibb'];
-        $ganancias = $_POST['porcentaje_ganancias'];
-        
-        $resultados = $impuestoController->calcularReservaFiscal($brutos, $deducibles, $iva, $ganancias, $iibb);
-    }
-    require_once 'app/views/calculadora_impuestos_view.php';
-} 
-
-// Módulo: Gastos Recurrentes (Vista)
-elseif ($action === 'gastos_recurrentes') {
-    $datos = $transaccionController->obtenerDatosGastosRecurrentes($id_usuario_actual);
+} elseif ($action === 'gastos_recurrentes') {
+    $datos = $transaccionController->obtenerDatosGastosRecurrentes($_SESSION['id_usuario']);
     require_once 'app/views/gastos_recurrentes_view.php';
-}
 
-// Módulo: Metas Financieras (Vista)
-elseif ($action === 'metas') {
-    $metas = $metaController->obtenerDatosMetas($id_usuario_actual);
+} elseif ($action === 'metas') {
+    $metas = $metaController->obtenerDatosMetas($_SESSION['id_usuario']);
     require_once 'app/views/metas_view.php';
-}
 
-else {
-    echo "<h2>Error 404: Módulo no encontrado.</h2>";
-    echo "<a href='index.php'>Volver al inicio</a>";
+} elseif ($action === 'inversiones') {
+    require_once 'app/views/simulador_inversion_view.php';
+
+} elseif ($action === 'impuestos') {
+    require_once 'app/views/calculadora_impuestos_view.php';
 }
 ?>

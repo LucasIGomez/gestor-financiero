@@ -77,5 +77,14 @@ class DeudaModel {
         $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    // 5. Elimina una deuda específica de la base de datos
+    public function eliminarDeuda($id_deuda, $id_usuario) {
+        $sql = "DELETE FROM deudas WHERE id_deuda = :id_deuda AND id_usuario = :id_usuario";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
 }
 ?>
