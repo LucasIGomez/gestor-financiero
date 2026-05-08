@@ -1,0 +1,19 @@
+# Dependencias
+/vendor/
+composer.lock
+
+# Entorno
+.env
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Temporales
+database/verify.sql

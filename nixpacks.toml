@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["php83", "php83Extensions.pdo", "php83Extensions.pdo_mysql", "php83Extensions.intl", "php83Extensions.mbstring"]
+
+[phases.build]
+cmds = ["mkdir -p /etc/apache2"]
+
+[start]
+cmd = "php -S 0.0.0.0:${PORT:-8080} -t ."

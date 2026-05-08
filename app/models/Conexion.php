@@ -1,17 +1,28 @@
 <?php
 
 class Conexion {
-    private $host = '127.0.0.1';
-    private $db_name = 'gestor_financiero';
-    private $username = 'root';
-    private $password = ''; // Laragon no asigna contraseña a root por defecto
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
+    private $port;
     private $conn;
+
+    public function __construct() {
+        // Railway provee variables sin underscore (MYSQLHOST, MYSQLUSER, etc.)
+        // Fallback a valores locales de Laragon para desarrollo
+        $this->host     = getenv('MYSQLHOST')     ?: (getenv('MYSQL_HOST')     ?: '127.0.0.1');
+        $this->db_name  = getenv('MYSQLDATABASE') ?: (getenv('MYSQL_DATABASE') ?: 'gestor_financiero');
+        $this->username = getenv('MYSQLUSER')     ?: (getenv('MYSQL_USER')     ?: 'root');
+        $this->password = getenv('MYSQLPASSWORD') ?: (getenv('MYSQL_PASSWORD') ?: '');
+        $this->port     = getenv('MYSQLPORT')     ?: (getenv('MYSQL_PORT')     ?: '3306');
+    }
 
     public function conectar() {
         $this->conn = null;
 
         try {
-            $dsn = "mysql:host=" . $this->host . ";dbname=" . $this->db_name . ";charset=utf8mb4";
+            $dsn = "mysql:host=" . $this->host . ";port=" . $this->port . ";dbname=" . $this->db_name . ";charset=utf8mb4";
             
             // Opciones de seguridad y manejo de errores
             $opciones = [

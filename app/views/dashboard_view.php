@@ -2,7 +2,15 @@
 
     <div class="page-header">
         <h2>Dashboard Financiero</h2>
-        <p>Resumen del mes actual — <?php $fmt = new IntlDateFormatter('es_AR', IntlDateFormatter::NONE, IntlDateFormatter::NONE, null, null, 'MMMM yyyy'); echo ucfirst($fmt->format(new DateTime())); ?></p>
+        <p>Resumen del mes actual — <?php
+            if (class_exists('IntlDateFormatter')) {
+                $fmt = new IntlDateFormatter('es_AR', IntlDateFormatter::NONE, IntlDateFormatter::NONE, null, null, 'MMMM yyyy');
+                echo ucfirst($fmt->format(new DateTime()));
+            } else {
+                $meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+                echo $meses[date('n')-1] . ' ' . date('Y');
+            }
+        ?></p>
     </div>
 
     <!-- Alertas de comportamiento financiero -->
