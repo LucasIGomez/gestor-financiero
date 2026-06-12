@@ -44,5 +44,18 @@ class TransaccionModel {
         
         return $stmt->execute();
     }
+
+    // Verifica si ya existe un pago o egreso registrado para una deuda en el mes y año en curso
+    public function existePagoDeudaEsteMes($id_deuda) {
+        $sql = "SELECT COUNT(*) as total FROM transacciones 
+                WHERE id_deuda = :id_deuda 
+                AND MONTH(fecha_transaccion) = MONTH(CURRENT_DATE()) 
+                AND YEAR(fecha_transaccion) = YEAR(CURRENT_DATE())";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt->execute();
+        $res = $stmt->fetch();
+        return ($res['total'] > 0);
+    }
 }
 ?>

@@ -56,7 +56,7 @@
                             <button type="submit" class="btn btn-primary btn-sm">Ahorrar</button>
                         </form>
                     <?php else: ?>
-                        <p class="text-green" style="text-align: center; font-weight: 600; margin-top: 14px;">🎉 ¡Meta Completada!</p>
+                        <p class="text-green" style="text-align: center; font-weight: 600; margin-top: 14px;"><i class="fa-solid fa-trophy"></i> ¡Meta Completada!</p>
                     <?php endif; ?>
                 </div>
             <?php endforeach; ?>

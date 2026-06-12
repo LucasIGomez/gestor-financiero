@@ -4,6 +4,8 @@ require_once 'app/models/CategoriaModel.php';
 require_once 'app/models/DeudaModel.php';
 require_once 'app/models/GastoRecurrenteModel.php';
 require_once 'app/models/MetaModel.php';
+require_once 'app/models/PresupuestoModel.php';
+require_once 'app/models/HistoricoModel.php';
 
 class TransaccionController {
     private $transaccionModel;
@@ -11,6 +13,8 @@ class TransaccionController {
     private $deudaModel;
     private $gastoRecurrenteModel;
     private $metaModel;
+    private $presupuestoModel;
+    private $historicoModel;
 
     public function __construct() {
         $this->transaccionModel = new TransaccionModel();
@@ -18,6 +22,8 @@ class TransaccionController {
         $this->deudaModel = new DeudaModel();
         $this->gastoRecurrenteModel = new GastoRecurrenteModel();
         $this->metaModel = new MetaModel();
+        $this->presupuestoModel = new PresupuestoModel();
+        $this->historicoModel = new HistoricoModel();
     }
 
     // Lógica del Pseudo-Cron de automatización de gastos fijos
@@ -40,9 +46,50 @@ class TransaccionController {
         }
     }
 
+    // Automatiza la amortización de cuotas/pagos mínimos al llegar la fecha de vencimiento
+    private function automatizarDeudasVencidas($id_usuario) {
+        $deudas = $this->deudaModel->obtenerDeudasAvalancha($id_usuario);
+        $fecha_actual = date('Y-m-d');
+        $dia_actual = intval(date('j'));
+        
+        foreach ($deudas as $deuda) {
+            if ($deuda['saldo_total'] > 0 && $deuda['dia_vencimiento'] > 0) {
+                if ($dia_actual >= intval($deuda['dia_vencimiento'])) {
+                    if (!$this->transaccionModel->existePagoDeudaEsteMes($deuda['id_deuda'])) {
+                        $id_categoria = $this->categoriaModel->obtenerOCrearCategoriaPagoDeudas($id_usuario);
+                        
+                        $monto_pago = $deuda['cuota_mensual'];
+                        if ($deuda['tipo_deuda'] === 'tarjeta_credito' && $monto_pago <= 0) {
+                            $monto_pago = $deuda['saldo_total'];
+                        }
+                        
+                        if ($monto_pago > 0) {
+                            $monto_pago = min($monto_pago, $deuda['saldo_total']);
+                            $descripcion_automatica = "Cuota automática: " . $deuda['nombre_deuda'];
+                            
+                            // 1. Registrar la transacción de egreso
+                            $this->transaccionModel->registrarTransaccion(
+                                $id_usuario, 
+                                $id_categoria, 
+                                $monto_pago, 
+                                $descripcion_automatica, 
+                                $fecha_actual,
+                                $deuda['id_deuda']
+                            );
+                            
+                            // 2. Actualizar el saldo e historial de la deuda
+                            $this->deudaModel->registrarPagoDeuda($deuda['id_deuda'], $id_usuario, $monto_pago);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public function obtenerDatosDashboard($id_usuario) {
-        // Ejecutar automatización
+        // Ejecutar automatizaciones
         $this->automatizarGastosRecurrentes($id_usuario);
+        $this->automatizarDeudasVencidas($id_usuario);
 
         // Extraer datos (Nota: transacciones ahora solo trae las del mes actual)
         $transacciones = $this->transaccionModel->obtenerTransacciones($id_usuario);
@@ -100,6 +147,22 @@ class TransaccionController {
         // Si la liquidez es 0 o negativa, el límite diario cae a 0 para no agravar la deuda
         $limite_diario_seguro = $liquidez_actual > 0 ? ($liquidez_actual / $dias_restantes) : 0;
 
+        // Guardar la instantánea en tiempo real del mes actual
+        $periodo_actual = date('Y-m-01');
+        $this->historicoModel->guardarInstantaneaMensual(
+            $id_usuario,
+            $periodo_actual,
+            $total_ingresos,
+            $total_gastos,
+            $total_deudas,
+            $total_ahorros,
+            $patrimonio_neto
+        );
+
+        // Obtener trayectoria histórica y presupuestos
+        $trayectoria = $this->historicoModel->obtenerTrayectoriaPatrimonial($id_usuario);
+        $presupuestos = $this->presupuestoModel->obtenerPresupuestosYConsumos($id_usuario, $periodo_actual);
+
         $grafico_etiquetas = json_encode(array_keys($gastos_por_categoria));
         $grafico_valores = json_encode(array_values($gastos_por_categoria));
 
@@ -117,7 +180,9 @@ class TransaccionController {
             // Empaquetamos las variables del nuevo algoritmo para la Vista
             'limite_diario_seguro' => $limite_diario_seguro,
             'dias_restantes'       => $dias_restantes,
-            'tarjetas'             => $tarjetas
+            'tarjetas'             => $tarjetas,
+            'trayectoria'          => $trayectoria,
+            'presupuestos'         => $presupuestos
         ];
     }
 
@@ -152,6 +217,12 @@ class TransaccionController {
         $categorias = $this->categoriaModel->obtenerCategorias($id_usuario);
         $plantillas = $this->gastoRecurrenteModel->obtenerPlantillasUsuario($id_usuario);
         return ['categorias' => $categorias, 'plantillas' => $plantillas];
+    }
+
+    public function procesarEstablecerPresupuesto($id_usuario, $id_categoria, $monto_limite, $periodo) {
+        if ($monto_limite < 0) return "Error: El monto límite no puede ser negativo.";
+        $exito = $this->presupuestoModel->establecerPresupuesto($id_usuario, $id_categoria, $monto_limite, $periodo);
+        return $exito ? true : "Error: No se pudo registrar el presupuesto.";
     }
 }
 ?>

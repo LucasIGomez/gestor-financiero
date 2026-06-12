@@ -1,8 +1,26 @@
 <?php $page_title = 'Gastos Fijos'; require_once 'app/views/partials/layout_header.php'; ?>
 
-    <div class="page-header">
-        <h2>Automatización de Gastos Fijos</h2>
-        <p>Configurá plantillas de gastos que se registran automáticamente cada mes</p>
+    <div class="header-actions-row">
+        <div class="page-header" style="margin-bottom: 0;">
+            <h2>Automatización de Gastos Fijos</h2>
+            <p>Configurá plantillas de gastos que se registran automáticamente cada mes</p>
+        </div>
+        <button type="button" class="info-btn" onclick="toggleAyuda()"><i class="fa-solid fa-circle-info"></i> Conceptos del Módulo</button>
+    </div>
+
+    <!-- Guía conceptual integrada (Ayuda interactiva) -->
+    <div class="help-card" id="ayudaRecurrentes">
+        <h4><i class="fa-solid fa-graduation-cap"></i> Educación Financiera: Gastos Fijos y Pseudo-Cron</h4>
+        <div class="help-grid">
+            <div class="help-item">
+                <strong>¿Qué son los Gastos Fijos?</strong>
+                Son aquellos egresos previsibles e indispensables que ocurren todos los meses, como alquileres, expensas, abonos telefónicos, luz o seguros. Planificarlos te permite entender tu costo de vida base.
+            </div>
+            <div class="help-item">
+                <strong>¿Cómo funciona el Pseudo-Cron?</strong>
+                Al entrar al Dashboard, el sistema revisa si hoy es igual o posterior al día de cobro fijado en la plantilla. Si no se ha registrado aún este mes, ClariFi crea la transacción de egreso automáticamente para reflejar tu saldo real.
+            </div>
+        </div>
     </div>
 
     <!-- Formulario -->
@@ -77,5 +95,14 @@
             </tbody>
         </table>
     </div>
+
+    <script>
+        function toggleAyuda() {
+            const card = document.getElementById('ayudaRecurrentes');
+            if (card) {
+                card.classList.toggle('active');
+            }
+        }
+    </script>
 
 <?php require_once 'app/views/partials/layout_footer.php'; ?>

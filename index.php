@@ -175,6 +175,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $deudaController->procesarPagoDeuda($_POST, $_SESSION['id_usuario']);
         header("Location: index.php?action=deudas");
         exit;
+    } elseif ($action === 'registrar_adelanto_deuda') {
+        $resultado = $deudaController->procesarPagoAdelantado($_POST, $_SESSION['id_usuario']);
+        header("Location: index.php?action=deudas");
+        exit;
+    } elseif ($action === 'registrar_inversion') {
+        $resultado = $inversionController->procesarNuevaInversion($_POST, $_SESSION['id_usuario']);
+        header("Location: index.php?action=inversiones");
+        exit;
+    } elseif ($action === 'registrar_presupuesto') {
+        $resultado = $transaccionController->procesarEstablecerPresupuesto(
+            $_SESSION['id_usuario'],
+            $_POST['id_categoria'],
+            $_POST['monto_limite'],
+            date('Y-m-d')
+        );
+        if ($resultado === true) {
+            header("Location: index.php?action=dashboard");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
     }
 }
 
@@ -187,7 +208,7 @@ if ($action === 'bienvenida') {
     require_once 'app/views/dashboard_view.php';
     
 } elseif ($action === 'deudas') {
-    $datos = $deudaController->obtenerDatosDeudas($_SESSION['id_usuario']);
+    $datos = $deudaController->obtenerDatosDeudas($_SESSION['id_usuario'], $_GET['metodo'] ?? 'avalancha');
     require_once 'app/views/lista_deudas_view.php';
     
 } elseif ($action === 'editar_deuda') {
@@ -207,6 +228,13 @@ if ($action === 'bienvenida') {
         exit;
     }
 
+} elseif ($action === 'eliminar_inversion') {
+    if (isset($_GET['id'])) {
+        $resultado = $inversionController->procesarEliminarInversion($_GET['id'], $_SESSION['id_usuario']);
+        header("Location: index.php?action=inversiones");
+        exit;
+    }
+
 } elseif ($action === 'gastos_recurrentes') {
     $datos = $transaccionController->obtenerDatosGastosRecurrentes($_SESSION['id_usuario']);
     require_once 'app/views/gastos_recurrentes_view.php';
@@ -216,6 +244,7 @@ if ($action === 'bienvenida') {
     require_once 'app/views/metas_view.php';
 
 } elseif ($action === 'inversiones') {
+    $datos = $inversionController->obtenerDatosVista($_SESSION['id_usuario']);
     require_once 'app/views/simulador_inversion_view.php';
 
 } elseif ($action === 'impuestos') {

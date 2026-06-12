@@ -8,9 +8,13 @@ class DeudaController {
         $this->deudaModel = new DeudaModel();
     }
 
-    // Extrae y simula el pago de deudas basado en el CFT
-    public function obtenerDatosDeudas($id_usuario) {
-        $deudas = $this->deudaModel->obtenerDeudasAvalancha($id_usuario);
+    // Extrae y simula el pago de deudas basado en el método seleccionado (Avalancha o Bola de Nieve)
+    public function obtenerDatosDeudas($id_usuario, $metodo = 'avalancha') {
+        if ($metodo === 'bolanieve') {
+            $deudas = $this->deudaModel->obtenerDeudasBolaNieve($id_usuario);
+        } else {
+            $deudas = $this->deudaModel->obtenerDeudasAvalancha($id_usuario);
+        }
         
         foreach ($deudas as &$deuda) {
             $pago_extra = 50000; 
@@ -138,6 +142,43 @@ class DeudaController {
 
         // Reducir el saldo de la deuda (y sumar cuota si es préstamo)
         $this->deudaModel->registrarPagoDeuda($id_deuda, $id_usuario, $monto);
+
+        return true;
+    }
+
+    // Procesa un pago adelantado (amortización anticipada) aplicando descuento si corresponde
+    public function procesarPagoAdelantado($post_data, $id_usuario) {
+        $id_deuda = $post_data['id_deuda'] ?? null;
+        $monto_pagado = floatval($post_data['monto_pago'] ?? 0);
+        $descuento_obtenido = floatval($post_data['descuento'] ?? 0);
+        $fecha_pago = !empty($post_data['fecha_pago']) ? $post_data['fecha_pago'] : date('Y-m-d');
+
+        if (!$id_deuda || $monto_pagado <= 0) {
+            return "Error: Debe ingresar un monto de pago válido.";
+        }
+
+        // Verificar que la deuda pertenece al usuario
+        $deuda = $this->deudaModel->obtenerDeudaPorId($id_deuda, $id_usuario);
+        if (!$deuda) {
+            return "Error: Deuda no encontrada.";
+        }
+
+        // Obtener o crear la categoría "Pago de Deudas"
+        require_once 'app/models/CategoriaModel.php';
+        $categoriaModel = new CategoriaModel();
+        $id_categoria = $categoriaModel->obtenerOCrearCategoriaPagoDeudas($id_usuario);
+
+        // Registrar la transacción de egreso (solo por el dinero real pagado de su bolsillo)
+        require_once 'app/models/TransaccionModel.php';
+        $transaccionModel = new TransaccionModel();
+        $descripcion = "Adelanto: " . $deuda['nombre_deuda'];
+        if ($descuento_obtenido > 0) {
+            $descripcion .= " (Descuento: $" . number_format($descuento_obtenido, 2) . ")";
+        }
+        $transaccionModel->registrarTransaccion($id_usuario, $id_categoria, $monto_pagado, $descripcion, $fecha_pago, $id_deuda);
+
+        // Guardar el adelanto y actualizar el saldo de la deuda
+        $this->deudaModel->registrarPagoAdelantado($id_deuda, $id_usuario, $monto_pagado, $descuento_obtenido, $fecha_pago);
 
         return true;
     }

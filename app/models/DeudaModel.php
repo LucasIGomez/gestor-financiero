@@ -106,5 +106,51 @@ class DeudaModel {
         $stmt2->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
         return $stmt2->execute();
     }
+
+    // Obtiene las deudas ordenadas por el método Bola de Nieve (saldo total ascendente)
+    public function obtenerDeudasBolaNieve($id_usuario) {
+        $sql = "SELECT * FROM deudas WHERE id_usuario = :id_usuario ORDER BY saldo_total ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // Registra una amortización anticipada (pago adelantado) restando saldo de deuda y guardando historial
+    public function registrarPagoAdelantado($id_deuda, $id_usuario, $monto_pagado, $descuento_obtenido, $fecha_pago) {
+        $total_amortizacion = $monto_pagado + $descuento_obtenido;
+
+        // 1. Reducir el saldo_total de la deuda
+        $sql = "UPDATE deudas SET saldo_total = GREATEST(saldo_total - :total_amortizacion, 0)
+                WHERE id_deuda = :id_deuda AND id_usuario = :id_usuario";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':total_amortizacion', $total_amortizacion, PDO::PARAM_STR);
+        $stmt->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+
+        // 2. Si es un préstamo, registrar la cuota pagada
+        $deuda = $this->obtenerDeudaPorId($id_deuda, $id_usuario);
+        if ($deuda && $deuda['tipo_deuda'] === 'prestamo' && $deuda['cuota_mensual'] > 0) {
+            $cuotas_adelantadas = ceil($total_amortizacion / $deuda['cuota_mensual']);
+            $sql2 = "UPDATE deudas SET cuotas_pagadas = LEAST(cuotas_pagadas + :cuotas, cuotas_totales)
+                     WHERE id_deuda = :id_deuda AND id_usuario = :id_usuario";
+            $stmt2 = $this->db->prepare($sql2);
+            $stmt2->bindParam(':cuotas', $cuotas_adelantadas, PDO::PARAM_INT);
+            $stmt2->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+            $stmt2->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+            $stmt2->execute();
+        }
+
+        // 3. Registrar en la tabla pagos_adelantados
+        $sql3 = "INSERT INTO pagos_adelantados (id_deuda, monto_pagado, descuento_obtenido, fecha_pago)
+                 VALUES (:id_deuda, :monto_pagado, :descuento_obtenido, :fecha_pago)";
+        $stmt3 = $this->db->prepare($sql3);
+        $stmt3->bindParam(':id_deuda', $id_deuda, PDO::PARAM_INT);
+        $stmt3->bindParam(':monto_pagado', $monto_pagado, PDO::PARAM_STR);
+        $stmt3->bindParam(':descuento_obtenido', $descuento_obtenido, PDO::PARAM_STR);
+        $stmt3->bindParam(':fecha_pago', $fecha_pago, PDO::PARAM_STR);
+        return $stmt3->execute();
+    }
 }
 ?>

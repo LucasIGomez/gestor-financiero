@@ -1,8 +1,30 @@
 <?php $page_title = 'Fiscal'; require_once 'app/views/partials/layout_header.php'; ?>
 
-    <div class="page-header">
-        <h2>Automatización Fiscal para Independientes</h2>
-        <p>Calculá la reserva que debés apartar mensualmente para impuestos</p>
+    <div class="header-actions-row">
+        <div class="page-header" style="margin-bottom: 0;">
+            <h2>Automatización Fiscal para Independientes</h2>
+            <p>Calculá la reserva que debés apartar mensualmente para impuestos</p>
+        </div>
+        <button type="button" class="info-btn" onclick="toggleAyuda()"><i class="fa-solid fa-circle-info"></i> Conceptos del Módulo</button>
+    </div>
+
+    <!-- Guía conceptual integrada (Ayuda interactiva) -->
+    <div class="help-card" id="ayudaImpuestos">
+        <h4><i class="fa-solid fa-graduation-cap"></i> Educación Financiera: Conceptos Fiscales</h4>
+        <div class="help-grid">
+            <div class="help-item">
+                <strong>IVA (Impuesto al Valor Agregado)</strong>
+                Es un impuesto al consumo. Si emitís facturas tipo A o B, cobrás IVA débito (ej. 21%) a tus clientes. A esto le restás el IVA crédito de tus compras de insumos para calcular el saldo a pagar.
+            </div>
+            <div class="help-item">
+                <strong>Ingresos Brutos (IIBB)</strong>
+                Impuesto provincial que se cobra sobre la facturación bruta total obtenida en el mes, sin importar tus gastos o ganancias reales. Cada provincia maneja sus propias alícuotas (comúnmente entre 3% y 5%).
+            </div>
+            <div class="help-item">
+                <strong>Impuesto a las Ganancias</strong>
+                Es un tributo progresivo sobre tu utilidad neta anual. Se calcula restando todos los gastos comerciales deducibles necesarios para tu negocio de tu ingreso bruto facturado.
+            </div>
+        </div>
     </div>
 
     <!-- Formulario -->
@@ -54,5 +76,14 @@
             </div>
         <?php endif; ?>
     <?php endif; ?>
+
+    <script>
+        function toggleAyuda() {
+            const card = document.getElementById('ayudaImpuestos');
+            if (card) {
+                card.classList.toggle('active');
+            }
+        }
+    </script>
 
 <?php require_once 'app/views/partials/layout_footer.php'; ?>
