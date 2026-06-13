@@ -282,6 +282,25 @@
                     <small style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 2px;">
                         Las llaves de producción se almacenan encriptadas con cifrado simétrico AES-256.
                     </small>
+                    
+                    <!-- Breve guía interactiva para obtener la API en lenguaje simple -->
+                    <div style="margin-top: 10px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 10px 14px;">
+                        <h5 style="margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--accent-hover); cursor: pointer; display: flex; align-items: center; gap: 6px;" onclick="toggleInstruccionesAPI()">
+                            <i class="fa-solid fa-circle-question"></i> ¿Cómo consigo esta clave? (Hacé clic)
+                        </h5>
+                        <div id="instrucciones_api" style="display: none; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.45; margin-top: 6px;">
+                            <ol style="padding-left: 14px; display: flex; flex-direction: column; gap: 4px;">
+                                <li>Ingresá a <a href="https://www.mercadopago.com.ar/developers" target="_blank" style="text-decoration: underline; color: var(--accent-hover);">Mercado Pago Developers</a> con tu cuenta habitual.</li>
+                                <li>Hacé clic en <strong>"Tus integraciones"</strong> en la parte superior.</li>
+                                <li>Presioná <strong>"Crear aplicación"</strong> (nombrala <em>ClariFi</em>).</li>
+                                <li>Entrá a <strong>"Credenciales de producción"</strong> en tu nueva aplicación.</li>
+                                <li>Copiá la clave larga del campo <strong>"Access Token"</strong> (empieza con <code>APP_USR-</code>) y pegala acá.</li>
+                            </ol>
+                            <p style="margin-top: 6px; font-size: 0.7rem; color: var(--text-muted); font-style: italic;">
+                                *Para Ualá, Lemon o Naranja X, en esta simulación podés escribir cualquier palabra clave de prueba (ej: <code>demo123</code>).
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -310,11 +329,22 @@
             }
         }
 
+        function toggleInstruccionesAPI() {
+            const el = document.getElementById('instrucciones_api');
+            if (el) {
+                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
         function abrirModalConexion(billetera, nombre) {
             document.getElementById('modal_billetera').value = billetera;
             document.getElementById('modal_titulo').innerText = "Vincular " + nombre;
             document.getElementById('modal_subtitulo').innerText = "Conectar API Sandbox de " + nombre;
             document.getElementById('modalConexion').style.display = 'flex';
+            
+            // Ocultar instrucciones por defecto al abrir
+            const el = document.getElementById('instrucciones_api');
+            if (el) el.style.display = 'none';
         }
 
         function cerrarModalConexion() {
