@@ -8,6 +8,7 @@ require_once 'app/controllers/DeudaController.php';
 require_once 'app/controllers/MetaController.php';
 require_once 'app/controllers/ImpuestoController.php';
 require_once 'app/controllers/InversionController.php';
+require_once 'app/controllers/ConexionController.php';
 
 // 2. INSTANCIACIÓN DE CONTROLADORES
 $usuarioController = new UsuarioController();
@@ -16,6 +17,7 @@ $deudaController = new DeudaController();
 $metaController = new MetaController();
 $impuestoController = new ImpuestoController();
 $inversionController = new InversionController();
+$conexionController = new ConexionController();
 
 $action = $_GET['action'] ?? 'login';
 
@@ -196,6 +198,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             echo "<script>alert('$resultado'); window.history.back();</script>";
         }
+    } elseif ($action === 'vincular_billetera') {
+        $resultado = $conexionController->procesarVinculacion($_SESSION['id_usuario'], $_POST);
+        if ($resultado === true) {
+            header("Location: index.php?action=conexiones");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
+    } elseif ($action === 'registrar_regla') {
+        $resultado = $conexionController->procesarNuevaRegla($_SESSION['id_usuario'], $_POST);
+        if ($resultado === true) {
+            header("Location: index.php?action=conexiones");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
+    } elseif ($action === 'sincronizar_billetera') {
+        $resultado = $conexionController->procesarSincronizacionSimulada($_SESSION['id_usuario']);
+        if (is_numeric($resultado)) {
+            header("Location: index.php?action=conexiones&sync=1");
+            exit;
+        } else {
+            echo "<script>alert('$resultado'); window.history.back();</script>";
+        }
     }
 }
 
@@ -249,5 +275,20 @@ if ($action === 'bienvenida') {
 
 } elseif ($action === 'impuestos') {
     require_once 'app/views/calculadora_impuestos_view.php';
+} elseif ($action === 'conexiones') {
+    $datos = $conexionController->obtenerDatosConexiones($_SESSION['id_usuario']);
+    require_once 'app/views/conexiones_view.php';
+} elseif ($action === 'desconectar_billetera') {
+    if (isset($_GET['id'])) {
+        $conexionController->procesarDesconexion($_GET['id'], $_SESSION['id_usuario']);
+        header("Location: index.php?action=conexiones");
+        exit;
+    }
+} elseif ($action === 'eliminar_regla') {
+    if (isset($_GET['id'])) {
+        $conexionController->procesarEliminarRegla($_GET['id'], $_SESSION['id_usuario']);
+        header("Location: index.php?action=conexiones");
+        exit;
+    }
 }
 ?>

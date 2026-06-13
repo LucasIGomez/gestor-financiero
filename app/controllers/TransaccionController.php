@@ -6,6 +6,7 @@ require_once 'app/models/GastoRecurrenteModel.php';
 require_once 'app/models/MetaModel.php';
 require_once 'app/models/PresupuestoModel.php';
 require_once 'app/models/HistoricoModel.php';
+require_once 'app/models/ConexionModel.php';
 
 class TransaccionController {
     private $transaccionModel;
@@ -15,6 +16,7 @@ class TransaccionController {
     private $metaModel;
     private $presupuestoModel;
     private $historicoModel;
+    private $conexionModel;
 
     public function __construct() {
         $this->transaccionModel = new TransaccionModel();
@@ -24,6 +26,7 @@ class TransaccionController {
         $this->metaModel = new MetaModel();
         $this->presupuestoModel = new PresupuestoModel();
         $this->historicoModel = new HistoricoModel();
+        $this->conexionModel = new ConexionModel();
     }
 
     // Lógica del Pseudo-Cron de automatización de gastos fijos
@@ -126,6 +129,17 @@ class TransaccionController {
             }
         }
 
+        // Alerta si hay transacciones pendientes de clasificar
+        $sin_clasificar_count = 0;
+        foreach ($transacciones as $t) {
+            if ($t['nombre_categoria'] === 'Por Clasificar') {
+                $sin_clasificar_count++;
+            }
+        }
+        if ($sin_clasificar_count > 0) {
+            $alertas[] = "Tenés <strong>$sin_clasificar_count</strong> transferencias sin categorizar. <a href='index.php?action=conexiones' style='font-weight:700; text-decoration:underline; color:inherit;'>Clasificalos ahora</a> para ordenarlas.";
+        }
+
         $total_deudas = 0;
         foreach ($deudas as $deuda) {
             $total_deudas += $deuda['saldo_total'];
@@ -136,7 +150,14 @@ class TransaccionController {
             $total_ahorros += $meta['saldo_actual'];
         }
 
-        $liquidez_actual = $total_ingresos - $total_gastos;
+        // Sumar saldos de billeteras conectadas
+        $conexiones = $this->conexionModel->obtenerConexionesUsuario($id_usuario);
+        $saldo_billeteras = 0.00;
+        foreach ($conexiones as $con) {
+            $saldo_billeteras += (float)$con['saldo_simulado'];
+        }
+
+        $liquidez_actual = ($total_ingresos - $total_gastos) + $saldo_billeteras;
         $patrimonio_neto = $liquidez_actual + $total_ahorros - $total_deudas;
 
         // NUEVO: Algoritmo de Gasto Diario Seguro (Safe-to-Spend)

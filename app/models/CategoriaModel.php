@@ -65,4 +65,46 @@ class CategoriaModel {
         }
     }
 
-}?>
+    // Busca la categoría "Por Clasificar" del usuario. Si no existe, la crea automáticamente.
+    public function obtenerOCrearCategoriaPorClasificar($id_usuario) {
+        $sql = "SELECT id_categoria FROM categorias 
+                WHERE id_usuario = :id_usuario AND nombre_categoria = 'Por Clasificar' AND tipo_flujo = 'gasto'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($resultado) {
+            return $resultado['id_categoria'];
+        } else {
+            $sql_insert = "INSERT INTO categorias (id_usuario, nombre_categoria, tipo_flujo) 
+                           VALUES (:id_usuario, 'Por Clasificar', 'gasto')";
+            $stmt_insert = $this->db->prepare($sql_insert);
+            $stmt_insert->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+            $stmt_insert->execute();
+            return $this->db->lastInsertId();
+        }
+    }
+
+    // Busca la categoría "Rendimientos" del usuario. Si no existe, la crea automáticamente.
+    public function obtenerOCrearCategoriaRendimientos($id_usuario) {
+        $sql = "SELECT id_categoria FROM categorias 
+                WHERE id_usuario = :id_usuario AND nombre_categoria = 'Rendimientos' AND tipo_flujo = 'ingreso'";
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+        $stmt->execute();
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($resultado) {
+            return $resultado['id_categoria'];
+        } else {
+            $sql_insert = "INSERT INTO categorias (id_usuario, nombre_categoria, tipo_flujo) 
+                           VALUES (:id_usuario, 'Rendimientos', 'ingreso')";
+            $stmt_insert = $this->db->prepare($sql_insert);
+            $stmt_insert->bindParam(':id_usuario', $id_usuario, PDO::PARAM_INT);
+            $stmt_insert->execute();
+            return $this->db->lastInsertId();
+        }
+    }
+}
+?>

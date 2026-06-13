@@ -41,6 +41,9 @@ $nombre_usuario = $_SESSION['nombre_usuario'] ?? 'Usuario';
                 <a href="index.php?action=deudas" class="<?= $current_action === 'deudas' || $current_action === 'editar_deuda' ? 'active' : '' ?>">
                     <span class="icon"><i class="fa-solid fa-credit-card"></i></span> Deudas
                 </a>
+                <a href="index.php?action=conexiones" class="<?= $current_action === 'conexiones' ? 'active' : '' ?>">
+                    <span class="icon"><i class="fa-solid fa-link"></i></span> Conexiones API
+                </a>
 
                 <div class="nav-divider"></div>
 
