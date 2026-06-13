@@ -270,35 +270,26 @@
         <div class="auth-card" style="width: 100%; max-width: 440px; margin: 20px; animation: none;">
             <div class="brand">
                 <h1 id="modal_titulo">Vincular Cuenta</h1>
-                <p id="modal_subtitulo">Integración segura mediante OAuth Sandbox</p>
+                <p id="modal_subtitulo">Integración segura de billetera</p>
             </div>
             
-            <form action="index.php?action=vincular_billetera" method="POST" onsubmit="console.log('Vinculando...');">
+            <form action="index.php?action=vincular_billetera" method="POST">
                 <input type="hidden" name="billetera" id="modal_billetera">
 
                 <div class="form-group">
-                    <label>Access Token / API Key</label>
-                    <input type="password" name="access_token" required placeholder="APP_USR-845183...">
+                    <label id="label_token_modal">Access Token / API Key</label>
+                    <input type="password" name="access_token" id="input_token_modal" required placeholder="APP_USR-...">
                     <small style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 2px;">
                         Las llaves de producción se almacenan encriptadas con cifrado simétrico AES-256.
                     </small>
                     
                     <!-- Breve guía interactiva para obtener la API en lenguaje simple -->
                     <div style="margin-top: 10px; background: rgba(255,255,255,0.03); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 10px 14px;">
-                        <h5 style="margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--accent-hover); cursor: pointer; display: flex; align-items: center; gap: 6px;" onclick="toggleInstruccionesAPI()">
-                            <i class="fa-solid fa-circle-question"></i> ¿Cómo consigo esta clave? (Hacé clic)
+                        <h5 style="margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--accent-hover); cursor: pointer; display: flex; align-items: center; gap: 6px;" onclick="toggleInstruccionesAPI()" id="btn_toggle_instrucciones">
+                            <i class="fa-solid fa-circle-question"></i> ¿Cómo vinculo esta cuenta? (Hacé clic)
                         </h5>
                         <div id="instrucciones_api" style="display: none; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.45; margin-top: 6px;">
-                            <ol style="padding-left: 14px; display: flex; flex-direction: column; gap: 4px;">
-                                <li>Ingresá a <a href="https://www.mercadopago.com.ar/developers" target="_blank" style="text-decoration: underline; color: var(--accent-hover);">Mercado Pago Developers</a> con tu cuenta habitual.</li>
-                                <li>Hacé clic en <strong>"Tus integraciones"</strong> en la parte superior.</li>
-                                <li>Presioná <strong>"Crear aplicación"</strong> (nombrala <em>ClariFi</em>).</li>
-                                <li>Entrá a <strong>"Credenciales de producción"</strong> en tu nueva aplicación.</li>
-                                <li>Copiá la clave larga del campo <strong>"Access Token"</strong> (empieza con <code>APP_USR-</code>) y pegala acá.</li>
-                            </ol>
-                            <p style="margin-top: 6px; font-size: 0.7rem; color: var(--text-muted); font-style: italic;">
-                                *Para Ualá, Lemon o Naranja X, en esta simulación podés escribir cualquier palabra clave de prueba (ej: <code>demo123</code>).
-                            </p>
+                            <!-- Cargado dinámicamente mediante JS -->
                         </div>
                     </div>
                 </div>
@@ -331,20 +322,78 @@
 
         function toggleInstruccionesAPI() {
             const el = document.getElementById('instrucciones_api');
+            const btn = document.getElementById('btn_toggle_instrucciones');
             if (el) {
-                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+                if (el.style.display === 'none') {
+                    el.style.display = 'block';
+                    btn.innerHTML = '<i class="fa-solid fa-circle-chevron-up"></i> Ocultar instrucciones';
+                } else {
+                    el.style.display = 'none';
+                    btn.innerHTML = '<i class="fa-solid fa-circle-question"></i> ¿Cómo vinculo esta cuenta? (Hacé clic)';
+                }
             }
         }
 
         function abrirModalConexion(billetera, nombre) {
             document.getElementById('modal_billetera').value = billetera;
             document.getElementById('modal_titulo').innerText = "Vincular " + nombre;
-            document.getElementById('modal_subtitulo').innerText = "Conectar API Sandbox de " + nombre;
-            document.getElementById('modalConexion').style.display = 'flex';
+            document.getElementById('modal_subtitulo').innerText = "Conectar API de " + nombre;
             
-            // Ocultar instrucciones por defecto al abrir
-            const el = document.getElementById('instrucciones_api');
-            if (el) el.style.display = 'none';
+            const labelToken = document.getElementById('label_token_modal');
+            const inputToken = document.getElementById('input_token_modal');
+            const instContainer = document.getElementById('instrucciones_api');
+            const toggleBtn = document.getElementById('btn_toggle_instrucciones');
+            
+            // Ocultar instrucciones por defecto
+            if (instContainer) instContainer.style.display = 'none';
+            if (toggleBtn) toggleBtn.innerHTML = '<i class="fa-solid fa-circle-question"></i> ¿Cómo vinculo esta cuenta? (Hacé clic)';
+
+            let instHtml = '';
+            
+            if (billetera === 'mercado_pago') {
+                // Mercado Pago utiliza Credenciales de Producción
+                labelToken.innerText = "Access Token de Producción (o Sandbox)";
+                inputToken.placeholder = "APP_USR-123456789...";
+                
+                instHtml = `
+                    <p style="margin-bottom: 8px;"><strong>¿Cómo conecta ClariFi tu cuenta REAL de Mercado Pago?</strong></p>
+                    <p style="margin-bottom: 8px; font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
+                        Mercado Pago permite a sus usuarios crear "claves de acceso externas" (Access Token) en su portal de desarrolladores para que plataformas como ClariFi puedan sincronizar saldos y movimientos automáticamente de forma segura.
+                    </p>
+                    <ol style="padding-left: 14px; display: flex; flex-direction: column; gap: 4px;">
+                        <li>Ingresá a la web oficial de <a href="https://www.mercadopago.com.ar/developers" target="_blank" style="text-decoration: underline; color: var(--accent-hover);">Mercado Pago Developers</a> con tu usuario habitual.</li>
+                        <li>Navegá a <strong>"Tus integraciones"</strong> en la cabecera y hacé clic en <strong>"Crear aplicación"</strong> (nombrala <em>ClariFi</em>).</li>
+                        <li>Hacé clic en tu aplicación y andá a <strong>"Credenciales de producción"</strong> en el menú de la izquierda.</li>
+                        <li>Copiá el código largo de <strong>"Access Token"</strong> (empieza con <code>APP_USR-</code>) y pegalo arriba.</li>
+                    </ol>
+                    <p style="margin-top: 6px; font-size: 0.7rem; color: var(--text-muted); font-style: italic;">
+                        * Nota: Esta llave es únicamente de lectura de movimientos y saldo. ClariFi nunca almacena tus contraseñas personales.
+                    </p>
+                `;
+            } else {
+                // Ualá, Naranja X y Lemon Cash se conectan a través de agregación de Open Banking
+                labelToken.innerText = "Contraseña / PIN de Banca Móvil";
+                inputToken.placeholder = "Ingresá tu PIN o contraseña de la App";
+                
+                instHtml = `
+                    <p style="margin-bottom: 8px;"><strong>¿Cómo se vincula una cuenta de Ualá, Lemon o Naranja X?</strong></p>
+                    <p style="margin-bottom: 8px; font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
+                        Estas plataformas no disponen de un panel de desarrolladores para usuarios comunes. ClariFi utiliza proveedores seguros de agregación bancaria de datos (Open Banking) como <em>Belvo</em> o <em>Prometeo</em>.
+                    </p>
+                    <ol style="padding-left: 14px; display: flex; flex-direction: column; gap: 4px;">
+                        <li>Completá tu <strong>Alias</strong> y el <strong>PIN / Contraseña</strong> con el que ingresás a la App de tu celular.</li>
+                        <li>El sistema iniciará una conexión encriptada y enviará una <strong>notificación de autorización (Push o SMS)</strong> a tu celular registrado.</li>
+                        <li>Al aceptar la notificación en tu teléfono celular, ClariFi podrá sincronizar saldos y movimientos automáticamente en modo lectura.</li>
+                    </ol>
+                    <p style="margin-top: 8px; font-size: 0.72rem; color: var(--yellow); font-weight: 500; line-height: 1.4;">
+                        ⚠️ <i class="fa-solid fa-triangle-exclamation"></i> <strong>Modo Simulación Activo</strong>:<br>
+                        Como estamos en la maqueta de prueba (Sandbox), para Ualá, Lemon o Naranja X podés escribir cualquier contraseña ficticia (ej: <code>demo123</code>) y experimentar el flujo de simulación completo sin ingresar datos reales de tus cuentas.
+                    </p>
+                `;
+            }
+            
+            if (instContainer) instContainer.innerHTML = instHtml;
+            document.getElementById('modalConexion').style.display = 'flex';
         }
 
         function cerrarModalConexion() {
