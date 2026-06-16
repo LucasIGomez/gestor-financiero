@@ -12,10 +12,10 @@ INSERT INTO categorias (id_usuario, nombre_categoria, tipo_flujo) VALUES
 (1, 'Ocio', 'gasto');
 
 -- 3. Insertar Deudas (Estructuradas para probar el Método Avalancha)
-INSERT INTO deudas (id_usuario, nombre_deuda, saldo_total, tasa_intereses, cuota_mensual) VALUES 
-(1, 'Tarjeta de Crédito Visa', 250000.00, 120.50, 20000.00),
-(1, 'Préstamo Automotor', 1500000.00, 65.00, 85000.00),
-(1, 'Crédito Personal', 100000.00, 140.00, 15000.00);
+INSERT INTO deudas (id_usuario, nombre_deuda, saldo_total, cft, cuota_mensual, tipo_deuda) VALUES 
+(1, 'Tarjeta de Crédito Visa', 250000.00, 120.50, 20000.00, 'tarjeta_credito'),
+(1, 'Préstamo Automotor', 1500000.00, 65.00, 85000.00, 'prestamo'),
+(1, 'Crédito Personal', 100000.00, 140.00, 15000.00, 'prestamo');
 
 -- 4. Insertar Transacciones
 INSERT INTO transacciones (id_usuario, id_categoria, monto, descripcion, fecha_transaccion) VALUES 
